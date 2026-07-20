@@ -168,7 +168,80 @@ def verify(assignment, data):
     return problems
 
 
-#  output 
+# ---------- explainability ----------
+
+def explain_placement(name, assignment, data):
+    """Human-readable reasons why a task sits where it does.
+    Re-examines every alternative (slot, venue) and reports why each
+    was worse or impossible — explainable AI for the end user."""
+    slot, venue_name = assignment[name]
+    task = data["_by_name"][name]
+    people = attendance(task, data)
+    others = {n: p for n, p in assignment.items() if n != name}
+
+    lines = [f'"{name}" is at {slot} in {venue_name}:']
+    lines.append(f"   - {people} people attend; {venue_name} holds "
+                 f"{next(v['capacity'] for v in data['venues'] if v['name'] == venue_name)}.")
+
+    too_small = [v["name"] for v in data["venues"] if v["capacity"] < people]
+    if too_small:
+        lines.append(f"   - Too small for it: {', '.join(too_small)}.")
+
+    banned = data.get("staff_unavailable", {}).get(task["staff"], [])
+    if banned:
+        lines.append(f"   - {task['staff']} is unavailable at: {', '.join(banned)}.")
+
+    # count what ruled out the other slot/venue combinations
+    blocked = {"group busy": 0, "staff busy": 0, "venue taken": 0}
+    open_alternatives = []
+    for s in data["slots"]:
+        for v in data["venues"]:
+            if (s, v["name"]) == (slot, venue_name):
+                continue
+            if v["capacity"] < people or s in banned \
+               or s in data.get("venue_unavailable", {}).get(v["name"], []):
+                continue
+            reason = None
+            for on, (os_, ov) in others.items():
+                if os_ != s:
+                    continue
+                other = data["_by_name"][on]
+                if ov == v["name"]:
+                    reason = "venue taken"
+                elif set(task["groups"]) & set(other["groups"]):
+                    reason = "group busy"
+                elif task["staff"] == other["staff"]:
+                    reason = "staff busy"
+                if reason:
+                    break
+            if reason:
+                blocked[reason] += 1
+            else:
+                open_alternatives.append((s, v["name"]))
+
+    ruled_out = ", ".join(f"{n} by {r}" for r, n in blocked.items() if n)
+    if ruled_out:
+        lines.append(f"   - Alternatives ruled out: {ruled_out}.")
+
+    here = placement_penalty(task, slot, others, data)
+    if open_alternatives:
+        better = [
+            (s, v) for s, v in open_alternatives
+            if placement_penalty(task, s, others, data) < here
+        ]
+        if better:
+            lines.append(f"   - Note: {len(better)} kinder alternative(s) exist "
+                         f"(may cost quality elsewhere).")
+        else:
+            lines.append(f"   - {len(open_alternatives)} legal alternative(s) exist, "
+                         f"but none kinder (same-day fatigue would be equal or worse).")
+    else:
+        lines.append("   - No legal alternative exists: this was the ONLY valid placement.")
+
+    return "\n".join(lines)
+
+
+#  output
 
 def print_timetable(assignment, data):
     label = data.get("task_label", "Task")

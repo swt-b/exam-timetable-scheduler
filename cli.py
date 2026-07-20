@@ -16,7 +16,8 @@ import copy
 import sys
 import time
 
-from engine import load_data, solve, verify, print_timetable, quality_score
+from engine import (load_data, solve, verify, print_timetable,
+                    quality_score, explain_placement)
 from reschedule import apply_disruption, repair
 
 
@@ -140,6 +141,16 @@ def save_timetable(timetable, data):
     print(f"\nSaved to {filename}")
 
 
+def explain(data, timetable):
+    if timetable is None:
+        print("\nGenerate a timetable first (option 1).")
+        return
+    names = sorted(timetable.keys())
+    which = choose_from(names, "exams")
+    print()
+    print(explain_placement(which, timetable, data))
+
+
 def main():
     data_path = sys.argv[1] if len(sys.argv) > 1 else "softwarica_exams.json"
     data = fresh(data_path)
@@ -154,7 +165,8 @@ def main():
         print("  2. Simulate disruption and repair")
         print("  3. Show data summary")
         print("  4. Save timetable to file")
-        print("  5. Exit")
+        print("  5. Explain a placement (why is this exam here?)")
+        print("  6. Exit")
         choice = input("\nChoice: ").strip()
 
         if choice == "1":
@@ -167,10 +179,12 @@ def main():
         elif choice == "4":
             save_timetable(timetable, data)
         elif choice == "5":
+            explain(data, timetable)
+        elif choice == "6":
             print("Goodbye.")
             break
         else:
-            print("Pick 1-5.")
+            print("Pick 1-6.")
 
 
 if __name__ == "__main__":
