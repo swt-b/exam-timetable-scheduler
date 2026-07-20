@@ -1,0 +1,10 @@
+# Python auto-generated files
+__pycache__/
+*.pyc
+
+# Editor settings
+.vscode/
+
+# OS junk
+Thumbs.db
+.DS_Store
