@@ -72,7 +72,40 @@ def valid_options(task, assignment, data):
     ]
 
 
-# the solver 
+# ---------- soft constraints (schedule quality) ----------
+
+def day_of(slot):
+    """'Mon 9AM' -> 'Mon'. The day part of a slot."""
+    return slot.split()[0]
+
+
+def placement_penalty(task, slot, assignment, data):
+    """Soft-constraint cost of placing task at slot.
+    +10 for every group that already has a task the same day (student fatigue).
+    +5  if the staff member already works that day (staff load)."""
+    penalty = 0
+    for placed_name, (s, _v) in assignment.items():
+        if day_of(s) != day_of(slot):
+            continue
+        placed = data["_by_name"][placed_name]
+        penalty += 10 * len(set(task["groups"]) & set(placed["groups"]))
+        if task["staff"] == placed["staff"]:
+            penalty += 5
+    return penalty
+
+
+def quality_score(assignment, data):
+    """0-100 score for a finished timetable. 100 = nobody has two
+    tasks on the same day. Lower = more fatigue in the schedule."""
+    total = 0
+    items = list(assignment.items())
+    for i, (name, (slot, _v)) in enumerate(items):
+        others = dict(items[:i])
+        total += placement_penalty(data["_by_name"][name], slot, others, data)
+    return max(0, 100 - total)
+
+
+# ---------- the solver ----------
 
 def solve(assignment, unscheduled, data, stats):
     """Backtracking search with MRV (schedule the most constrained task first)."""
@@ -88,7 +121,13 @@ def solve(assignment, unscheduled, data, stats):
         return None  # dead end detected early (forward checking)
 
     task = data["_by_name"][name]
-    for slot, venue_name in options[name]:
+    # value ordering by soft constraints: try the *kindest* placements first
+    # (fewest same-day repeats for students and staff)
+    ordered = sorted(
+        options[name],
+        key=lambda sv: placement_penalty(task, sv[0], assignment, data),
+    )
+    for slot, venue_name in ordered:
         stats["attempts"] += 1
         assignment[name] = (slot, venue_name)
         rest = [t for t in unscheduled if t["name"] != name]
@@ -162,6 +201,7 @@ def run(path):
         return
 
     print_timetable(result, data)
+    print(f"Schedule quality score: {quality_score(result, data)}/100")
     problems = verify(result, data)
     if problems:
         print("PROBLEMS FOUND:")

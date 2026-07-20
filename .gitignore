@@ -5,6 +5,9 @@ __pycache__/
 # Editor settings
 .vscode/
 
+# Generated output
+timetable_output.txt
+
 # OS junk
 Thumbs.db
 .DS_Store
