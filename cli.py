@@ -166,7 +166,8 @@ def main():
         print("  3. Show data summary")
         print("  4. Save timetable to file")
         print("  5. Explain a placement (why is this exam here?)")
-        print("  6. Exit")
+        print("  6. Open visual timetable in browser")
+        print("  7. Exit")
         choice = input("\nChoice: ").strip()
 
         if choice == "1":
@@ -181,10 +182,16 @@ def main():
         elif choice == "5":
             explain(data, timetable)
         elif choice == "6":
+            if timetable is None:
+                print("\nGenerate a timetable first (option 1).")
+            else:
+                from viz import show
+                show(timetable, data)
+        elif choice == "7":
             print("Goodbye.")
             break
         else:
-            print("Pick 1-6.")
+            print("Pick 1-7.")
 
 
 if __name__ == "__main__":
