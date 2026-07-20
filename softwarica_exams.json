@@ -1,0 +1,53 @@
+{
+  "title": "SOFTWARICA EXAM TIMETABLE - SUMMER 2026",
+  "task_label": "Exam",
+  "slots": [
+    "Sun 9AM", "Sun 1PM",
+    "Mon 9AM", "Mon 1PM",
+    "Tue 9AM", "Tue 1PM",
+    "Wed 9AM", "Wed 1PM",
+    "Thu 9AM", "Thu 1PM"
+  ],
+  "venues": [
+    {"name": "Hall A", "capacity": 60},
+    {"name": "Hall B", "capacity": 55},
+    {"name": "Room 105", "capacity": 35},
+    {"name": "Room 204", "capacity": 30},
+    {"name": "Lab 3", "capacity": 30}
+  ],
+  "groups": {
+    "CS-Sem2-A": 28,
+    "CS-Sem2-B": 25,
+    "CS-Sem4": 26,
+    "EH-Sem2": 32,
+    "EH-Sem4": 24,
+    "DS-Sem2": 30
+  },
+  "tasks": [
+    {"name": "Artificial Intelligence",      "staff": "Suman Shrestha",  "groups": ["CS-Sem2-A", "CS-Sem2-B"]},
+    {"name": "Database Systems",             "staff": "Anita Karki",     "groups": ["CS-Sem2-A"]},
+    {"name": "Database Systems (B)",         "staff": "Anita Karki",     "groups": ["CS-Sem2-B"]},
+    {"name": "Web Development",              "staff": "Bikash Thapa",    "groups": ["CS-Sem2-A", "CS-Sem2-B"]},
+    {"name": "Operating Systems",            "staff": "Bikash Thapa",    "groups": ["CS-Sem2-A"]},
+    {"name": "Operating Systems (EH)",       "staff": "Prakash Joshi",   "groups": ["EH-Sem2"]},
+    {"name": "Network Security",             "staff": "Prakash Joshi",   "groups": ["EH-Sem2"]},
+    {"name": "Ethical Hacking Fundamentals", "staff": "Sarita Rai",      "groups": ["EH-Sem2"]},
+    {"name": "Digital Forensics",            "staff": "Sarita Rai",      "groups": ["EH-Sem4"]},
+    {"name": "Penetration Testing",          "staff": "Prakash Joshi",   "groups": ["EH-Sem4"]},
+    {"name": "Cryptography",                 "staff": "Sarita Rai",      "groups": ["EH-Sem4"]},
+    {"name": "Software Engineering",         "staff": "Ramesh Adhikari", "groups": ["CS-Sem4"]},
+    {"name": "Mobile App Development",       "staff": "Ramesh Adhikari", "groups": ["CS-Sem4"]},
+    {"name": "Cloud Computing",              "staff": "Bikash Thapa",    "groups": ["CS-Sem4"]},
+    {"name": "Machine Learning",             "staff": "Suman Shrestha",  "groups": ["CS-Sem4", "DS-Sem2"]},
+    {"name": "Statistics for Data Science",  "staff": "Nisha Maharjan",  "groups": ["DS-Sem2"]},
+    {"name": "Data Visualisation",           "staff": "Nisha Maharjan",  "groups": ["DS-Sem2"]},
+    {"name": "Python Programming",           "staff": "Anita Karki",     "groups": ["DS-Sem2"]},
+    {"name": "Discrete Mathematics",         "staff": "Nisha Maharjan",  "groups": ["CS-Sem2-A", "CS-Sem2-B"]},
+    {"name": "Professional Practice",        "staff": "Ramesh Adhikari", "groups": ["CS-Sem4", "EH-Sem4"]}
+  ],
+  "staff_unavailable": {
+    "Anita Karki":    ["Mon 9AM", "Mon 1PM"],
+    "Suman Shrestha": ["Sun 9AM"],
+    "Nisha Maharjan": ["Thu 1PM"]
+  }
+}
