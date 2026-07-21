@@ -31,6 +31,11 @@ def build_html(assignment, data):
     for name, (slot, venue) in assignment.items():
         by_cell[(slot, venue)] = name
 
+    # show only venues that actually host something (keeps the grid readable
+    # when the dataset lists the college's full room inventory)
+    used = {venue for _slot, venue in assignment.values()}
+    shown_venues = [v for v in data["venues"] if v["name"] in used]
+
     head = f"""<!DOCTYPE html>
 <html><head><meta charset="utf-8"><title>{title}</title>
 <style>
@@ -64,11 +69,11 @@ def build_html(assignment, data):
 
     rows = ["<table><tr><th></th>" +
             "".join(f"<th>{v['name']}<br><small>cap {v['capacity']}</small></th>"
-                    for v in data["venues"]) + "</tr>"]
+                    for v in shown_venues) + "</tr>"]
 
     for slot in data["slots"]:
         cells = [f'<td class="slot">{slot}</td>']
-        for v in data["venues"]:
+        for v in shown_venues:
             name = by_cell.get((slot, v["name"]))
             if not name:
                 cells.append('<td class="empty"></td>')
