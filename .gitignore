@@ -9,6 +9,9 @@ __pycache__/
 timetable_output.txt
 timetable.html
 
+# Private working notes (not part of the submission)
+report_outline.md
+
 # OS junk
 Thumbs.db
 .DS_Store
