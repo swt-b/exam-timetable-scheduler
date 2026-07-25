@@ -83,7 +83,7 @@ def random_baseline(data, seed=42):
 
 #  scenarios 
 
-def make_scenarios(path="softwarica_exams.json"):
+def make_scenarios(path="data/softwarica_exams.json"):
     base = load_data(path)
 
     small = copy.deepcopy(base)

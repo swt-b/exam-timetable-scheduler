@@ -23,11 +23,19 @@ import sys
 import time
 
 
-# data loading 
+# data loading
 
-def load_data(path):
-    with open(path) as f:
-        return json.load(f)
+def load_data(path, strict=False):
+    """Load a dataset from a .json file OR a folder of .csv files.
+
+    Delegates to dataio, which cleans recoverable noise (whitespace, case,
+    duplicates, numbers stored as text) and validates the result before the
+    solver ever sees it. Returns the data dict; the cleaning report is
+    attached as data["_report"].
+    """
+    from dataio import load_dataset
+    data, _report = load_dataset(path, strict=strict)
+    return data
 
 
 def attendance(task, data):
@@ -121,11 +129,27 @@ def solve(assignment, unscheduled, data, stats):
         return None  # dead end detected early (forward checking)
 
     task = data["_by_name"][name]
-    # value ordering by soft constraints: try the *kindest* placements first
-    # (fewest same-day repeats for students and staff)
+    # Value ordering, three keys in priority order:
+    #   1. soft-constraint penalty  - the kindest placement for students and
+    #      staff is always tried first
+    #   2. how busy the slot already is - spreads work across the timetable
+    #      instead of packing everything into whichever slot comes first
+    #   3. wasted seats - among equally good options, use the smallest room
+    #      that fits, so a 28-student class does not occupy a 100-seat hall
+    # This is ordering only. It never overrides a hard or soft constraint,
+    # and it does not affect the quality score.
+    slot_load = {}
+    for _n, (s, _v) in assignment.items():
+        slot_load[s] = slot_load.get(s, 0) + 1
+
+    people = attendance(task, data)
+    capacity = {v["name"]: v["capacity"] for v in data["venues"]}
+
     ordered = sorted(
         options[name],
-        key=lambda sv: placement_penalty(task, sv[0], assignment, data),
+        key=lambda sv: (placement_penalty(task, sv[0], assignment, data),
+                        slot_load.get(sv[0], 0),
+                        capacity[sv[1]] - people),
     )
     for slot, venue_name in ordered:
         stats["attempts"] += 1
@@ -245,12 +269,24 @@ def explain_placement(name, assignment, data):
 
 def print_timetable(assignment, data):
     label = data.get("task_label", "Task")
-    print(f"\n=== {data.get('title', 'TIMETABLE')} ===\n")
+    dates = data.get("slot_dates") or {}
+
+    from dataio import period_text
+    header = data.get("title", "TIMETABLE")
+    span = period_text(data)
+    if span:
+        header = f"{header}\n    {span}"
+    print(f"\n=== {header} ===\n")
+
     for slot in data["slots"]:
         here = [(n, v) for n, (s, v) in assignment.items() if s == slot]
         if not here:
             continue
-        print(f"{slot}")
+        if slot in dates:
+            from dataio import pretty_date
+            print(f"{slot}   ({pretty_date(dates[slot])})")
+        else:
+            print(f"{slot}")
         for name, venue in sorted(here, key=lambda x: x[1]):
             task = data["_by_name"][name]
             n = attendance(task, data)
@@ -263,6 +299,14 @@ def print_timetable(assignment, data):
 def run(path):
     data = load_data(path)
     data["_by_name"] = {t["name"]: t for t in data["tasks"]}
+
+    report = data.get("_report")
+    if report and not report.clean:
+        print(report.text())
+        print()
+        if not report.ok:
+            print("Dataset has errors — cannot schedule.")
+            return
 
     stats = {"attempts": 0, "backtracks": 0}
     start = time.time()
@@ -286,4 +330,4 @@ def run(path):
 
 
 if __name__ == "__main__":
-    run(sys.argv[1] if len(sys.argv) > 1 else "softwarica_exams.json")
+    run(sys.argv[1] if len(sys.argv) > 1 else "data/softwarica_exams.json")

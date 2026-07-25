@@ -12,6 +12,7 @@ import os
 import time
 
 from engine import (load_data, solve, verify, attendance, quality_score)
+from dataio import pretty_date, period_text
 
 PALETTE = ["#4e79a7", "#f28e2b", "#59a14f", "#e15759",
            "#76b7b2", "#af7aa1", "#edc948", "#9c755f"]
@@ -41,6 +42,7 @@ def build_html(assignment, data):
 <style>
   body {{ font-family: Segoe UI, Arial, sans-serif; margin: 24px; background:#f7f7f9; }}
   h1 {{ font-size: 22px; margin-bottom: 4px; }}
+  .period {{ color:#666; font-size:14px; margin-bottom:10px; }}
   .meta {{ color:#444; margin-bottom:16px; }}
   .badge {{ display:inline-block; padding:3px 10px; border-radius:12px;
            color:white; font-size:13px; margin-right:8px;
@@ -49,7 +51,9 @@ def build_html(assignment, data):
   th, td {{ border:1px solid #ddd; padding:6px; vertical-align:top; }}
   th {{ background:#2f3542; color:white; font-size:13px; }}
   td.slot {{ background:#2f3542; color:white; font-weight:bold;
-             white-space:nowrap; width:90px; }}
+             white-space:nowrap; width:110px; }}
+  td.slot .sd {{ font-weight:normal; font-size:10.5px; color:#a9b0c4;
+                 margin-top:2px; }}
   .card {{ border-radius:6px; padding:6px 8px; color:white; font-size:12.5px; }}
   .card b {{ font-size:13px; }}
   .legend span {{ display:inline-block; padding:2px 10px; border-radius:10px;
@@ -57,6 +61,7 @@ def build_html(assignment, data):
   .empty {{ background:#fafafa; }}
 </style></head><body>
 <h1>{title}</h1>
+{f'<div class="period">{period_text(data)}</div>' if period_text(data) else ''}
 <div class="meta">
   <span class="badge">{clashes} clashes</span>
   Quality score: <b>{quality}/100</b> &nbsp;|&nbsp;
@@ -71,8 +76,13 @@ def build_html(assignment, data):
             "".join(f"<th>{v['name']}<br><small>cap {v['capacity']}</small></th>"
                     for v in shown_venues) + "</tr>"]
 
+    dates = data.get("slot_dates") or {}
     for slot in data["slots"]:
-        cells = [f'<td class="slot">{slot}</td>']
+        if slot in dates:
+            cells = [f'<td class="slot">{slot}'
+                     f'<div class="sd">{pretty_date(dates[slot])}</div></td>']
+        else:
+            cells = [f'<td class="slot">{slot}</td>']
         for v in shown_venues:
             name = by_cell.get((slot, v["name"]))
             if not name:
@@ -106,7 +116,7 @@ def show(assignment, data, filename="timetable.html", open_browser=True):
 
 
 if __name__ == "__main__":
-    data = load_data("softwarica_exams.json")
+    data = load_data("data/softwarica_exams.json")
     data["_by_name"] = {t["name"]: t for t in data["tasks"]}
     result = solve({}, data["tasks"], data, {"attempts": 0, "backtracks": 0})
     if result is None:

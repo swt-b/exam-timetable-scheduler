@@ -8,7 +8,6 @@ rescheduling under uncertainty, explainable placements, and a visual output.
 
 Given subjects, rooms, teachers, student groups, and time slots, the system
 produces a timetable where:
-
 - no student group has two exams at the same time
 - no room holds two exams at once, or more students than its capacity
 - no teacher is double-booked, and unavailability is respected
@@ -16,6 +15,31 @@ produces a timetable where:
 
 The engine is general purpose: swapping the data file makes it schedule
 weekly classes instead of exams, with no code changes.
+
+## Data handling
+
+A dataset can be supplied three ways, all producing identical timetables
+because the input format is separated from the engine:
+
+- an **Excel workbook** with one tab per table (tidiest for office staff)
+- a folder of **CSV** files, one per table
+- a single **JSON** file
+
+The six tables are `meta`, `slots`, `venues`, `groups`, `tasks` and
+`unavailable`. The Excel workbook also carries a `readme` tab explaining
+what belongs in each sheet.
+
+Incoming data is cleaned and validated before the solver runs:
+
+- **repaired automatically** — stray whitespace, inconsistent capitalisation,
+  duplicate rows, numbers stored as text, group names that differ only by case
+- **rejected with reasons** — missing room capacity, a task with no staff
+  member, references to groups or rooms that do not exist, or a dataset that
+  is provably unschedulable (more tasks than slot/room combinations, a group
+  with more exams than there are slots)
+
+Every repair and rejection is reported to the user rather than applied
+silently, so a timetable is never built on data the system had to guess about.
 
 ## AI techniques used
 
@@ -34,11 +58,25 @@ weekly classes instead of exams, with no code changes.
 Requires Python 3 only (no external libraries).
 
 ```
-python cli.py                          # exam timetable (default dataset)
-python cli.py softwarica_classes.json  # weekly class timetable
-python experiments.py                  # evaluation: baselines and ablations
-python reschedule.py                   # rescheduling demo
+pip install flask openpyxl             # web interface, Excel input
+
+python app.py                              # web interface at http://127.0.0.1:5000
+python cli.py                              # terminal interface (exam timetable)
+python cli.py softwarica_classes.json      # terminal: weekly class timetable
+python engine.py softwarica_exams.xlsx     # same timetable, loaded from Excel
+python engine.py data_exams_csv            # same timetable, loaded from CSV
+python dataio.py data_noisy_csv            # data cleaning report only
+python experiments.py                      # evaluation: baselines and ablations
+python reschedule.py                       # rescheduling demo
 ```
+
+Dataset names are resolved against the `data/` folder, so
+`python engine.py softwarica_exams.xlsx` and
+`python engine.py data/softwarica_exams.xlsx` both work.
+
+The solver itself uses no external libraries. Flask is only for the web
+interface and openpyxl only for reading Excel files; the CLI runs on JSON
+or CSV with a plain Python 3 install.
 
 The CLI menu offers: generate, simulate a disruption, data summary,
 save to file, explain a placement, and open the visual timetable
@@ -53,8 +91,22 @@ in the browser.
 | `reschedule.py` | disruption handling and minimal repair |
 | `viz.py` | HTML visual timetable generator |
 | `experiments.py` | evaluation: baselines, ablations, stress scenarios |
-| `softwarica_exams.json` | main dataset: 20 exams, 6 groups, 8 staff |
+| `app.py` | Flask web interface — run and open http://127.0.0.1:5000 |
+| `dataio.py` | dataset loading (Excel + CSV + JSON), cleaning, validation |
+| `data/` | all datasets (see below) |
+
+### Inside `data/`
+
+| File | Role |
+|------|------|
+| `softwarica_exams.json` | main dataset: 20 exams, 6 groups, 7 staff |
 | `softwarica_classes.json` | second dataset proving engine generality |
+| `softwarica_exams.xlsx` | the exam dataset as an Excel workbook |
+| `softwarica_classes.xlsx` | the class dataset as an Excel workbook |
+| `data_exams_csv/` | the exam dataset in CSV form |
+| `data_classes_csv/` | the class dataset in CSV form |
+| `data_noisy_csv/` | recoverable noise: cleaned, then scheduled |
+| `data_messy_csv/` | unrecoverable errors: rejected with reasons |
 
 ## Evaluation summary
 

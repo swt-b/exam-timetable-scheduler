@@ -1,6 +1,8 @@
 {
   "title": "SOFTWARICA WEEKLY CLASS TIMETABLE",
   "task_label": "Class",
+  "valid_from": "2026-08-10",
+  "valid_to": "2026-12-17",
   "slots": [
     "Sun 8AM",
     "Sun 11AM",

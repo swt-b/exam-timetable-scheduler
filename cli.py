@@ -9,7 +9,7 @@ A simple menu program:
     4. Save current timetable to a text file
     5. Exit
 
-Run:  python cli.py [datafile.json]     (default: softwarica_exams.json)
+Run:  python cli.py [dataset]     (default: data/softwarica_exams.json)
 """
 
 import copy
@@ -152,7 +152,7 @@ def explain(data, timetable):
 
 
 def main():
-    data_path = sys.argv[1] if len(sys.argv) > 1 else "softwarica_exams.json"
+    data_path = sys.argv[1] if len(sys.argv) > 1 else "data/softwarica_exams.json"
     data = fresh(data_path)
     timetable = None
 

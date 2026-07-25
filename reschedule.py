@@ -52,32 +52,72 @@ def repair(assignment, data):
     return result, moved
 
 
-def demo(path="softwarica_exams.json"):
+def pick_disruption(assignment, data, who=None):
+    """Choose a realistic disruption: a staff member falls ill on a day they
+    are actually scheduled to work.
+
+    Returns (staff_name, day, slots_lost). Picking this from the solved
+    timetable rather than hard-coding it keeps the demo meaningful even when
+    the dataset or the solver's output changes.
+    """
+    from collections import defaultdict
+
+    day_of = lambda slot: slot.split()[0]
+    by_staff = defaultdict(lambda: defaultdict(list))
+    for name, (slot, _venue) in assignment.items():
+        by_staff[data["_by_name"][name]["staff"]][day_of(slot)].append(slot)
+
+    candidates = []
+    for staff, days in by_staff.items():
+        for day, slots in days.items():
+            candidates.append((len(slots), staff, day, sorted(slots)))
+
+    if who:                                   # honour a requested person
+        mine = [c for c in candidates if c[1] == who]
+        if mine:
+            candidates = mine
+
+    # busiest single day wins; ties broken alphabetically for a stable demo
+    _n, staff, day, slots = max(candidates, key=lambda c: (c[0], c[1], c[2]))
+
+    # the whole day is lost, not just the slots they happened to be given
+    lost = [s for s in data["slots"] if day_of(s) == day]
+    return staff, day, lost
+
+
+def demo(path="data/softwarica_exams.json", who="Sarita Rai"):
     data = load_data(path)
     data["_by_name"] = {t["name"]: t for t in data["tasks"]}
 
-    print("STEP 1 — normal timetable:")
+    print("STEP 1: normal timetable")
     stats = {"attempts": 0, "backtracks": 0}
     original = solve({}, data["tasks"], data, stats)
     print_timetable(original, data)
 
-    print("=" * 60)
-    print("STEP 2 — DISRUPTION: Sarita Rai is sick on Monday.")
-    print("=" * 60)
+    staff, day, lost = pick_disruption(original, data, who)
+    affected_now = [n for n, (s, _v) in original.items()
+                    if s in lost and data["_by_name"][n]["staff"] == staff]
+
+    print("=" * 62)
+    print(f"STEP 2: DISRUPTION. {staff} is unavailable all day on {day}")
+    print(f"        slots lost: {', '.join(lost)}")
+    print(f"        exams affected: {', '.join(sorted(affected_now)) or 'none'}")
+    print("=" * 62)
+
     disrupted = copy.deepcopy(data)
     disrupted["_by_name"] = {t["name"]: t for t in disrupted["tasks"]}
-    apply_disruption(disrupted, "staff", "Sarita Rai", ["Mon 9AM", "Mon 1PM"])
+    apply_disruption(disrupted, "staff", staff, lost)
 
     repaired, moved = repair(dict(original), disrupted)
     if repaired is None:
         print("Could not repair; affected:", moved)
         return
 
-    print(f"\nSTEP 3 — repaired by moving only {len(moved)} exam(s):")
+    print(f"\nSTEP 3: repaired by moving only {len(moved)} exam(s)")
     for name, (old_s, old_v), (new_s, new_v) in moved:
-        print(f"    {name}: {old_s}/{old_v}  ->  {new_s}/{new_v}")
+        print(f"    {name}: {old_s} / {old_v}  ->  {new_s} / {new_v}")
     untouched = len(repaired) - len(moved)
-    print(f"    ({untouched} of {len(repaired)} exams untouched)")
+    print(f"    ({untouched} of {len(repaired)} exams left exactly where they were)")
 
     print_timetable(repaired, disrupted)
     problems = verify(repaired, disrupted)
@@ -85,4 +125,4 @@ def demo(path="softwarica_exams.json"):
 
 
 if __name__ == "__main__":
-    demo(sys.argv[1] if len(sys.argv) > 1 else "softwarica_exams.json")
+    demo(sys.argv[1] if len(sys.argv) > 1 else "data/softwarica_exams.json")
