@@ -1,14 +1,10 @@
 """
-Rescheduling under uncertainty
-------------------------------
-Real life breaks published timetables: a teacher falls sick, a hall closes.
-This module REPAIRS the timetable instead of rebuilding it:
+Rescheduling under uncertainty.
 
-    1. Apply the disruption (new unavailability).
-    2. Find only the tasks that now break a constraint.
-    3. Un-place just those tasks; everything else stays fixed.
-    4. Re-run the CSP solver on the affected tasks only.
-    5. Report exactly what moved (minimal-disruption principle).
+When a teacher falls sick or a hall closes, the timetable is repaired rather
+than rebuilt: only the tasks that now break a constraint are un-placed and
+re-solved, so everything else stays where students already saw it.
+This is the minimal-disruption principle.
 """
 
 import copy
@@ -53,12 +49,10 @@ def repair(assignment, data):
 
 
 def pick_disruption(assignment, data, who=None):
-    """Choose a realistic disruption: a staff member falls ill on a day they
-    are actually scheduled to work.
+    """Pick a staff member and a day they actually work, so the demo stays
+    meaningful when the dataset or the solver output changes.
 
-    Returns (staff_name, day, slots_lost). Picking this from the solved
-    timetable rather than hard-coding it keeps the demo meaningful even when
-    the dataset or the solver's output changes.
+    Returns (staff_name, day, slots_lost).
     """
     from collections import defaultdict
 

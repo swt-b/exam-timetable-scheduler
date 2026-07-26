@@ -1,5 +1,5 @@
 """
-Experiments for Part D — Evaluation
+Experiments for Part D, Evaluation
 -----------------------------------
 Compares four scheduling methods on three scenarios.
 
@@ -32,7 +32,7 @@ from engine import (load_data, valid_options, placement_penalty,
 ATTEMPT_CAP = 100_000   # stop hopeless runs so the table always finishes
 
 
-# a solver whose features can be switched on/off 
+# --- solver with switchable features ---
 
 def solve_flex(assignment, unscheduled, data, stats, use_mrv, use_ordering):
     if not unscheduled:
@@ -69,7 +69,7 @@ def solve_flex(assignment, unscheduled, data, stats, use_mrv, use_ordering):
     return None
 
 
-# random baseline (what "no AI" looks like) 
+# --- random baseline ---
 
 def random_baseline(data, seed=42):
     rng = random.Random(seed)
@@ -81,7 +81,7 @@ def random_baseline(data, seed=42):
     return assignment
 
 
-#  scenarios 
+# --- scenarios ---
 
 def make_scenarios(path="data/softwarica_exams.json"):
     base = load_data(path)
@@ -102,7 +102,7 @@ def make_scenarios(path="data/softwarica_exams.json"):
     return scenarios
 
 
-#  run everything 
+# --- run ---
 
 def run_method(method, data):
     stats = {"attempts": 0, "backtracks": 0}

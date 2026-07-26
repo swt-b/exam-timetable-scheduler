@@ -1,10 +1,9 @@
 """
-Visual timetable — generates a colored HTML grid and opens it in the browser.
-Rows = time slots, columns = venues, one colored card per exam.
-Colors follow the student groups so clashes would be visually obvious.
+Standalone HTML timetable: rows are time slots, columns are venues,
+one coloured card per exam. Colours follow the student groups so a clash
+would be visible at a glance.
 
-Run standalone:  python viz.py
-Or from the CLI: option 6.
+Run:  python viz.py     (or option 6 in the CLI)
 """
 
 import webbrowser
@@ -101,7 +100,7 @@ def build_html(assignment, data):
 
     footer = (f"<p style='color:#666;font-size:12px'>Generated "
               f"{time.strftime('%Y-%m-%d %H:%M')} &middot; "
-              f"ST5001CMD coursework — exam-timetable-scheduler</p>")
+              f"exam-timetable-scheduler</p>")
 
     return head + legend + "".join(rows) + footer + "</body></html>"
 

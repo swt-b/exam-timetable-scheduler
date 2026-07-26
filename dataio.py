@@ -1,30 +1,14 @@
 """
-dataio.py — dataset loading, validation and cleaning
-----------------------------------------------------
-The scheduler accepts a dataset in three formats:
+Dataset loading, cleaning and validation.
 
-    JSON   a single .json file (compact, nested)
-    CSV    a folder of six .csv files (one table per file)
-    XLSX   a single Excel workbook with one tab per table (tidiest for staff)
+Reads a dataset from JSON, a folder of CSV files, or an Excel workbook, then:
+    clean()     repairs recoverable noise (whitespace, case, duplicates,
+                numbers stored as text)
+    validate()  rejects data that cannot produce a valid timetable
 
-Real datasets are never clean: fields get left blank, names are typed with
-stray spaces or inconsistent capitalisation, rows get duplicated, and numbers
-arrive as text. Feeding that straight into a CSP solver produces either a
-crash or — worse — a silently wrong timetable.
+Both keep a DataReport so nothing is changed silently.
 
-This module therefore does three jobs, in order:
-
-    1. LOAD       read either format into one internal structure
-    2. CLEAN      repair recoverable noise (whitespace, case, numeric text,
-                  duplicate rows, unknown-group typos)
-    3. VALIDATE   refuse to schedule if anything is still logically broken
-                  (missing capacity, group with no size, capacity smaller
-                  than every group, unavailability naming nobody, etc.)
-
-Every repair and every refusal is recorded in a report so the user can see
-exactly what the system did to their data.
-
-Table layout (same for CSV files and Excel tabs):
+Table layout, the same for CSV files and Excel tabs:
 
     meta          title, task_label, valid_from, valid_to   (dates optional)
     slots         slot, date            (date optional: YYYY-MM-DD)
@@ -40,7 +24,7 @@ import os
 import re
 
 
-# ── report object ────────────────────────────────────────────────────────────
+# --- load report ---
 
 class DataReport:
     """Everything the loader did to (and found wrong with) a dataset."""
@@ -77,7 +61,7 @@ class DataReport:
     def text(self):
         lines = [f"Dataset: {self.source}  [{self.format.upper()}]"]
         if self.clean:
-            lines.append("  No issues found — dataset is clean.")
+            lines.append("  No issues found, dataset is clean.")
             return "\n".join(lines)
         for m in self.repairs:
             lines.append(f"  [repaired] {m}")
@@ -88,7 +72,7 @@ class DataReport:
         return "\n".join(lines)
 
 
-# ── small cleaning helpers ───────────────────────────────────────────────────
+# --- helpers ---
 
 def _tidy(value):
     """Trim, collapse internal runs of whitespace, drop stray quotes."""
@@ -146,12 +130,8 @@ def _weekday_of(iso):
 
 
 def period_text(data):
-    """One line describing when a timetable applies.
-
-    Dated timetables (exams) report the span of their slots; recurring
-    timetables (weekly classes) report the term they are valid for.
-    Returns "" when the dataset carries no date information at all.
-    """
+    """One line saying when a timetable applies: a date span for exams, or a
+    term for recurring class timetables. Empty if the dataset has no dates."""
     dates = data.get("slot_dates") or {}
     if dates:
         ordered = [dates[s] for s in data.get("slots", []) if s in dates]
@@ -181,7 +161,7 @@ def pretty_date(iso, style="short"):
     return f"{d.strftime('%a')} {d.day} {d.strftime('%b %Y')}"
 
 
-# ── CSV reading ──────────────────────────────────────────────────────────────
+# --- CSV ---
 
 def _read_csv(path):
     """Read a CSV into a list of dicts with tidied, lower-cased headers."""
@@ -195,14 +175,10 @@ def _read_csv(path):
         return rows
 
 
-# ── Excel reading ────────────────────────────────────────────────────────────
+# --- Excel ---
 
 def _read_xlsx(path):
-    """Read an .xlsx workbook into {sheet_name: [row dicts]}.
-
-    Row 1 of each sheet is treated as the header. Headers and sheet names are
-    canonicalised so 'Venues', 'venues' and ' VENUES ' all resolve the same way.
-    """
+    """Read an .xlsx workbook into {sheet_name: [row dicts]}, row 1 as header."""
     try:
         from openpyxl import load_workbook
     except ImportError:
@@ -229,14 +205,13 @@ def _read_xlsx(path):
     return sheets
 
 
-# ── shared table assembly (used by both CSV and Excel) ───────────────────────
+# --- table assembly ---
 
 def _build_from_tables(tables, report, label):
     """Assemble the internal structure from {table_name: [row dicts]}.
 
-    Rows are passed through RAW wherever possible: clean() is the single place
-    that repairs noise, so JSON, CSV and Excel inputs get identical treatment
-    and every repair appears in the report.
+    Rows are passed through raw so clean() stays the only place that repairs
+    noise, and every format gets identical treatment.
     """
     data = {"title": "TIMETABLE", "task_label": "Task",
             "slots": [], "slot_dates": {}, "venues": [], "groups": {},
@@ -334,7 +309,7 @@ def load_xlsx(path, report):
     return _build_from_tables(_read_xlsx(path), report, "sheet")
 
 
-# ── cleaning ─────────────────────────────────────────────────────────────────
+# --- cleaning ---
 
 def clean(data, report):
     """Repair recoverable noise in place. Returns the same dict."""
@@ -511,7 +486,7 @@ def clean(data, report):
     return data
 
 
-# ── validation ───────────────────────────────────────────────────────────────
+# --- validation ---
 
 def validate(data, report):
     """Logical checks that must pass before scheduling is attempted."""
@@ -559,25 +534,20 @@ def validate(data, report):
 
     # soft warning: heavy day pressure
     if len(data["tasks"]) > capacity_cells * 0.8:
-        report.warn("Dataset is close to full capacity — schedule quality "
+        report.warn("Dataset is close to full capacity, schedule quality "
                     "may be low even if a valid timetable exists.")
 
     return data
 
 
-# ── public entry point ───────────────────────────────────────────────────────
+# --- entry point ---
 
 # datasets live in data/ next to the code, but a bare filename is also accepted
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 
 
 def resolve(path):
-    """Find a dataset whether it was given as 'x.json' or 'data/x.json'.
-
-    Tries the path as given, then relative to the data/ folder, then relative
-    to the project root. Returns the first that exists, else the original path
-    so the caller still gets a sensible 'file not found' error.
-    """
+    """Accept 'x.json' or 'data/x.json'. Returns the first path that exists."""
     root = os.path.dirname(os.path.abspath(__file__))
     for candidate in (path,
                       os.path.join(DATA_DIR, path),
@@ -588,9 +558,8 @@ def resolve(path):
 
 
 def load_dataset(path, strict=True):
-    """Load, clean and validate a dataset.
+    """Load, clean and validate a dataset from JSON, a CSV folder or .xlsx.
 
-    Accepts a .json file, a folder of .csv files, or an .xlsx workbook.
     Returns (data, report). Raises ValueError if strict and errors were found.
     """
     path = resolve(path)
@@ -625,7 +594,7 @@ def load_dataset(path, strict=True):
     return data, report
 
 
-# ── exporting a JSON dataset to CSV or Excel ────────────────────────────────
+# --- export ---
 
 def _tables_from_json(json_path):
     """Shared table extraction used by both the CSV and Excel exporters."""

@@ -1,6 +1,5 @@
 """
-app.py — Web interface for the AI Exam Timetable Scheduler
-ST5001CMD Artificial Intelligence coursework — Shweta Bhandari
+Web interface for the timetable scheduler.
 
 Run:  python app.py
 Open: http://localhost:5000
@@ -17,14 +16,14 @@ from dataio import pretty_date, period_text
 app = Flask(__name__)
 
 DATASETS = {
-    "exams":        "data/softwarica_exams.json",    # JSON input
+    "exams":        "data/softwarica_exams.json",
     "classes":      "data/softwarica_classes.json",
-    "exams_csv":    "data/data_exams_csv",           # same data, CSV input
+    "exams_csv":    "data/data_exams_csv",
     "classes_csv":  "data/data_classes_csv",
-    "exams_xlsx":   "data/softwarica_exams.xlsx",    # same data, Excel input
+    "exams_xlsx":   "data/softwarica_exams.xlsx",
     "classes_xlsx": "data/softwarica_classes.xlsx",
-    "noisy":        "data/data_noisy_csv",           # recoverable noise, cleaned then solved
-    "messy":        "data/data_messy_csv",           # unrecoverable errors, rejected
+    "noisy":        "data/data_noisy_csv",           # cleaned, then solved
+    "messy":        "data/data_messy_csv",           # rejected as unusable
 }
 
 PALETTE = ["#4e79a7","#f28e2b","#59a14f","#e15759",
@@ -36,11 +35,11 @@ def group_colors(data):
 
 def run_solver(dataset_key):
     path = DATASETS.get(dataset_key, DATASETS["exams"])
-    data = load_data(path)                      # cleans + validates
+    data = load_data(path)
     data["_by_name"] = {t["name"]: t for t in data["tasks"]}
     report = data.get("_report")
 
-    if report is not None and not report.ok:    # unusable data — do not solve
+    if report is not None and not report.ok:
         return data, None, {"attempts": 0, "backtracks": 0}, 0.0
 
     stats = {"attempts": 0, "backtracks": 0}
@@ -50,7 +49,7 @@ def run_solver(dataset_key):
     return data, result, stats, elapsed
 
 
-# ── shared base ──────────────────────────────────────────────────────────────
+# --- shared base ---
 
 BASE = """<!DOCTYPE html>
 <html lang="en">
@@ -196,7 +195,7 @@ select:focus,input:focus{outline:2px solid #818cf8;border-color:#818cf8;backgrou
 </body></html>"""
 
 
-# ── home ─────────────────────────────────────────────────────────────────────
+# --- home ---
 
 HOME = BASE.replace("{% block body %}{% endblock %}", """
 <div class="hero">
@@ -244,7 +243,7 @@ def home():
     return render_template_string(HOME, title="Home", active="home", ds=None)
 
 
-# ── about / how it works ──────────────────────────────────────────────────────
+# --- about / how it works ---
 
 ABOUT = BASE.replace("{% block body %}{% endblock %}", """
 <a class="back" href="/">← Back to Home</a>
@@ -455,7 +454,7 @@ def about():
     return render_template_string(ABOUT, title="How it works", active="about", ds=None)
 
 
-# ── build your own timetable ─────────────────────────────────────────────────
+# --- build your own timetable ---
 
 BUILD_PAGE = BASE.replace("{% block body %}{% endblock %}", """
 <a class="back" href="/">← Back to Home</a>
@@ -773,7 +772,7 @@ def build():
 
 
 
-# ── timetable ─────────────────────────────────────────────────────────────────
+# --- timetable ---
 
 TT_PAGE = BASE.replace("{% block body %}{% endblock %}", """
 <a class="back" href="/">← Back to Home</a>
@@ -1024,7 +1023,7 @@ def timetable():
     )
 
 
-# ── disruption simulator ──────────────────────────────────────────────────────
+# --- disruption simulator ---
 
 DIS_PAGE = BASE.replace("{% block body %}{% endblock %}", """
 <a class="back" href="/timetable?dataset={{ ds }}">← Back to Timetable</a>
@@ -1181,7 +1180,7 @@ def disrupt():
     )
 
 
-# ── explain ───────────────────────────────────────────────────────────────────
+# --- explain ---
 
 EXP_PAGE = BASE.replace("{% block body %}{% endblock %}", """
 <a class="back" href="/timetable?dataset={{ ds }}">← Back to Timetable</a>
@@ -1247,7 +1246,7 @@ def explain():
     )
 
 
-# ── data summary ──────────────────────────────────────────────────────────────
+# --- data summary ---
 
 SUM_PAGE = BASE.replace("{% block body %}{% endblock %}", """
 <a class="back" href="/timetable?dataset={{ ds }}">← Back to Timetable</a>
@@ -1346,7 +1345,7 @@ def summary():
     )
 
 
-# ── run ───────────────────────────────────────────────────────────────────────
+# --- run ---
 
 if __name__ == "__main__":
     import threading, webbrowser

@@ -23,15 +23,13 @@ import sys
 import time
 
 
-# data loading
+# --- data loading ---
 
 def load_data(path, strict=False):
-    """Load a dataset from a .json file OR a folder of .csv files.
+    """Load a dataset from JSON, a CSV folder or an .xlsx workbook.
 
-    Delegates to dataio, which cleans recoverable noise (whitespace, case,
-    duplicates, numbers stored as text) and validates the result before the
-    solver ever sees it. Returns the data dict; the cleaning report is
-    attached as data["_report"].
+    dataio cleans and validates it first. The report is attached as
+    data["_report"].
     """
     from dataio import load_dataset
     data, _report = load_dataset(path, strict=strict)
@@ -43,20 +41,20 @@ def attendance(task, data):
     return sum(data["groups"][g] for g in task["groups"])
 
 
-# constraint checking
+# --- constraints ---
 
 def conflicts(task, slot, venue, assignment, data):
     """Return True if placing task at (slot, venue) breaks any constraint."""
     # C5: staff availability
     if slot in data.get("staff_unavailable", {}).get(task["staff"], []):
         return True
-    # C6: venue availability (e.g., hall closed for maintenance)
+    # C6: venue availability
     if slot in data.get("venue_unavailable", {}).get(venue["name"], []):
         return True
     # C3: capacity
     if attendance(task, data) > venue["capacity"]:
         return True
-    # against already-placed tasks
+    # against what is already placed
     for placed_name, (s, v) in assignment.items():
         if s != slot:
             continue
@@ -80,7 +78,7 @@ def valid_options(task, assignment, data):
     ]
 
 
-# ---------- soft constraints (schedule quality) ----------
+# --- soft constraints ---
 
 def day_of(slot):
     """'Mon 9AM' -> 'Mon'. The day part of a slot."""
@@ -113,31 +111,24 @@ def quality_score(assignment, data):
     return max(0, 100 - total)
 
 
-# ---------- the solver ----------
+# --- solver ---
 
 def solve(assignment, unscheduled, data, stats):
     """Backtracking search with MRV (schedule the most constrained task first)."""
     if not unscheduled:
         return assignment
 
-    # MRV heuristic + forward check:
-    # compute remaining options for every unscheduled task,
-    # pick the one with the fewest — and fail immediately if any task has none.
+    # MRV: take the task with fewest remaining options.
+    # If any task has none, this branch is already dead (forward checking).
     options = {t["name"]: valid_options(t, assignment, data) for t in unscheduled}
     name = min(options, key=lambda n: len(options[n]))
     if not options[name]:
         return None  # dead end detected early (forward checking)
 
     task = data["_by_name"][name]
-    # Value ordering, three keys in priority order:
-    #   1. soft-constraint penalty  - the kindest placement for students and
-    #      staff is always tried first
-    #   2. how busy the slot already is - spreads work across the timetable
-    #      instead of packing everything into whichever slot comes first
-    #   3. wasted seats - among equally good options, use the smallest room
-    #      that fits, so a 28-student class does not occupy a 100-seat hall
-    # This is ordering only. It never overrides a hard or soft constraint,
-    # and it does not affect the quality score.
+
+    # Try values in order: kindest first, then emptiest slot, then tightest
+    # room. Ordering only, so it cannot break a constraint or change the score.
     slot_load = {}
     for _n, (s, _v) in assignment.items():
         slot_load[s] = slot_load.get(s, 0) + 1
@@ -164,7 +155,7 @@ def solve(assignment, unscheduled, data, stats):
     return None
 
 
-#  verification (independent proof) 
+# --- verification ---
 
 def verify(assignment, data):
     """Re-check every constraint pair from scratch. Returns list of problems."""
@@ -192,12 +183,11 @@ def verify(assignment, data):
     return problems
 
 
-# ---------- explainability ----------
+# --- explainability ---
 
 def explain_placement(name, assignment, data):
-    """Human-readable reasons why a task sits where it does.
-    Re-examines every alternative (slot, venue) and reports why each
-    was worse or impossible — explainable AI for the end user."""
+    """Why a task sits where it does. Re-examines every alternative
+    (slot, venue) and reports why each one was worse or impossible."""
     slot, venue_name = assignment[name]
     task = data["_by_name"][name]
     people = attendance(task, data)
@@ -215,7 +205,7 @@ def explain_placement(name, assignment, data):
     if banned:
         lines.append(f"   - {task['staff']} is unavailable at: {', '.join(banned)}.")
 
-    # count what ruled out the other slot/venue combinations
+    # tally why the other combinations were rejected
     blocked = {"group busy": 0, "staff busy": 0, "venue taken": 0}
     open_alternatives = []
     for s in data["slots"]:
@@ -265,7 +255,7 @@ def explain_placement(name, assignment, data):
     return "\n".join(lines)
 
 
-#  output
+# --- output ---
 
 def print_timetable(assignment, data):
     label = data.get("task_label", "Task")
@@ -294,7 +284,7 @@ def print_timetable(assignment, data):
         print()
 
 
-# main 
+# --- entry point ---
 
 def run(path):
     data = load_data(path)
@@ -305,7 +295,7 @@ def run(path):
         print(report.text())
         print()
         if not report.ok:
-            print("Dataset has errors — cannot schedule.")
+            print("Dataset has errors, cannot schedule.")
             return
 
     stats = {"attempts": 0, "backtracks": 0}

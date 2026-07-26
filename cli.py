@@ -100,7 +100,7 @@ def simulate_disruption(data, timetable):
 
     print(f"\nDisruption: {who} unavailable at {', '.join(slots)}")
     if not moved:
-        print("Timetable unaffected — nothing needed to move.")
+        print("Timetable unaffected, nothing needed to move.")
     else:
         print(f"Repaired by moving {len(moved)} task(s):")
         for name, (os_, ov), (ns, nv) in moved:
@@ -128,7 +128,7 @@ def show_summary(data):
 
 def save_timetable(timetable, data):
     if timetable is None:
-        print("\nNothing to save yet — generate a timetable first.")
+        print("\nNothing to save yet, generate a timetable first.")
         return
     filename = "timetable_output.txt"
     import io
@@ -157,7 +157,7 @@ def main():
     timetable = None
 
     print(LINE)
-    print("   TIMETABLE SCHEDULER — CSP Engine (ST5001CMD)")
+    print("   TIMETABLE SCHEDULER, CSP Engine (ST5001CMD)")
     print(LINE)
 
     while True:
