@@ -6,6 +6,7 @@ __pycache__/
 .vscode/
 
 # Generated output
+chart_*.png
 timetable_output.txt
 timetable.html
 

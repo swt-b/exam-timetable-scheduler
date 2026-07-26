@@ -67,6 +67,7 @@ python engine.py softwarica_exams.xlsx     # same timetable, loaded from Excel
 python engine.py data_exams_csv            # same timetable, loaded from CSV
 python dataio.py data_noisy_csv            # data cleaning report only
 python experiments.py                      # evaluation: baselines and ablations
+python charts.py                           # evaluation charts in popup windows
 python reschedule.py                       # rescheduling demo
 
 jupyter notebook notebooks/data_exploration.ipynb   # data analysis and charts
@@ -100,6 +101,7 @@ visual timetable in the browser.
 | `experiments.py` | evaluation: baselines, ablations, stress scenarios |
 | `app.py` | Flask web interface — run and open http://localhost:5000 |
 | `dataio.py` | dataset loading (Excel + CSV + JSON), cleaning, validation |
+| `charts.py` | runs the solver and shows the evaluation charts |
 | `notebooks/data_exploration.ipynb` | pandas analysis and charts of the data and results |
 | `data/` | all datasets (see below) |
 
