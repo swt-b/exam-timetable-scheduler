@@ -5,8 +5,8 @@ __pycache__/
 # Editor settings
 .vscode/
 
-# Generated output
-chart_*.png
+# Generated output (regenerate with charts.py or the notebook)
+figures/
 timetable_output.txt
 timetable.html
 

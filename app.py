@@ -8,7 +8,7 @@ Open: http://localhost:5000
 import os, sys, copy, time
 from flask import Flask, render_template_string, request
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "src"))
 from engine import load_data, solve, verify, quality_score, explain_placement, attendance
 from reschedule import apply_disruption, repair
 from dataio import pretty_date, period_text
@@ -16,14 +16,7 @@ from dataio import pretty_date, period_text
 app = Flask(__name__)
 
 DATASETS = {
-    "exams":        "data/softwarica_exams.json",
-    "classes":      "data/softwarica_classes.json",
-    "exams_csv":    "data/data_exams_csv",
-    "classes_csv":  "data/data_classes_csv",
-    "exams_xlsx":   "data/softwarica_exams.xlsx",
-    "classes_xlsx": "data/softwarica_classes.xlsx",
-    "noisy":        "data/data_noisy_csv",           # cleaned, then solved
-    "messy":        "data/data_messy_csv",           # rejected as unusable
+    "schedule": "data/exam_schedule.json",   # Kaggle "University Exam Scheduling"
 }
 
 PALETTE = ["#4e79a7","#f28e2b","#59a14f","#e15759",
@@ -34,7 +27,7 @@ def group_colors(data):
             for i, g in enumerate(sorted(data["groups"]))}
 
 def run_solver(dataset_key):
-    path = DATASETS.get(dataset_key, DATASETS["exams"])
+    path = DATASETS.get(dataset_key, DATASETS["schedule"])
     data = load_data(path)
     data["_by_name"] = {t["name"]: t for t in data["tasks"]}
     report = data.get("_report")
@@ -204,30 +197,18 @@ HOME = BASE.replace("{% block body %}{% endblock %}", """
      No student sits two exams at once. No room is overbooked. No teacher is double-booked.</p>
 </div>
 
-<div class="cards">
-  <div class="card">
-    <h3>📋 Exam Timetable</h3>
-    <p>End-of-semester exams for all student groups, scheduled across the
-       college's exam halls and rooms.</p>
+<div style="display:flex;justify-content:center;margin-bottom:28px">
+  <div class="card" style="max-width:520px">
+    <h3>🎓 University Exam Schedule</h3>
+    <p>Twenty-two exam sessions across five academic cohorts, eight
+       lecture rooms and twelve weekly time slots.</p>
     <div class="pills">
-      <span class="pill">20 exams</span>
-      <span class="pill">6 groups</span>
-      <span class="pill">5 venues</span>
-      <span class="pill">10 slots</span>
+      <span class="pill">22 exams</span>
+      <span class="pill">5 groups</span>
+      <span class="pill">8 rooms</span>
+      <span class="pill">12 slots</span>
     </div>
-    <a href="/timetable?dataset=exams" class="btn btn-primary">Generate Timetable →</a>
-  </div>
-  <div class="card">
-    <h3>🏫 Weekly Class Timetable</h3>
-    <p>Regular weekly lectures and labs across Softwarica's lecture rooms
-       (Lr 1–16), ICR labs and the Seminar Hall.</p>
-    <div class="pills">
-      <span class="pill">19 classes</span>
-      <span class="pill">4 groups</span>
-      <span class="pill">23 rooms</span>
-      <span class="pill">15 slots</span>
-    </div>
-    <a href="/timetable?dataset=classes" class="btn btn-primary">Generate Timetable →</a>
+    <a href="/timetable?dataset=kaggle" class="btn btn-primary">Generate Timetable →</a>
   </div>
 </div>
 
@@ -323,22 +304,20 @@ ABOUT = BASE.replace("{% block body %}{% endblock %}", """
 <div class="panel">
   <h2>Data</h2>
   <p style="font-size:13.5px;line-height:1.8;color:#333;margin-top:6px">
-    Your data can be an Excel workbook, a set of CSV files, or a JSON file. All three
-    produce the same timetable. Before scheduling, the data is checked: obvious problems
-    like extra spaces, inconsistent capitalisation and duplicate rows are repaired and
-    reported. Problems that cannot be guessed safely, such as a room with no capacity or
-    an exam with no teacher, stop the process with an explanation, rather than producing
-    a timetable that looks right but isn't.
+    The dataset is <b>University Exam Scheduling</b> from Kaggle (Rezwanul Azad,
+    2024). It comes as six related CSV files: courses, students, instructors,
+    classrooms, timeslots and enrolments. A converter script (<code>import_kaggle.py</code>)
+    reads those files and produces the single JSON file the solver uses.
   </p>
-  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px">
-    <a href="/timetable?dataset=exams_xlsx" class="btn btn-sm"
-       style="background:#e5e7eb;color:#374151">Loaded from Excel</a>
-    <a href="/timetable?dataset=exams_csv" class="btn btn-sm"
-       style="background:#e5e7eb;color:#374151">Loaded from CSV</a>
-    <a href="/timetable?dataset=noisy" class="btn btn-sm"
-       style="background:#fef3c7;color:#92400e">Example: messy data, repaired</a>
-    <a href="/timetable?dataset=messy" class="btn btn-sm btn-danger">Example: broken data, refused</a>
-  </div>
+  <p style="font-size:13.5px;line-height:1.8;color:#333;margin-top:10px">
+    Before scheduling, the loader validates the data: any missing capacity,
+    unknown group name or exam without an instructor stops the process with a
+    clear message, rather than producing a timetable that looks right but isn't.
+  </p>
+  <p style="font-size:13px;color:#666;margin-top:14px">
+    Source: <a href="https://www.kaggle.com/datasets/smrezwanulazad/exam-schedule"
+    style="color:#818cf8;font-weight:600">kaggle.com/datasets/smrezwanulazad/exam-schedule</a>
+  </p>
 </div>
 
 <hr style="border:none;border-top:1px solid #e5e7eb;margin:34px 0 26px">
@@ -643,9 +622,9 @@ def _build_defaults(data):
 
 @app.route("/build", methods=["GET", "POST"])
 def build():
-    base = (request.values.get("base") or "exams")
-    if base not in ("exams", "classes"):
-        base = "exams"
+    base = (request.values.get("base") or "schedule")
+    if base not in DATASETS:
+        base = "schedule"
 
     data = load_data(DATASETS[base])
     all_staff = sorted({t["staff"] for t in data["tasks"]})
@@ -948,7 +927,7 @@ def _no_solution(active):
 
 @app.route("/timetable")
 def timetable():
-    ds = request.args.get("dataset", "exams")
+    ds = request.args.get("dataset", "schedule")
     data, result, stats, elapsed = run_solver(ds)
     report = data.get("_report")
 
@@ -1112,7 +1091,7 @@ DIS_PAGE = BASE.replace("{% block body %}{% endblock %}", """
 
 @app.route("/disrupt", methods=["GET", "POST"])
 def disrupt():
-    ds = request.args.get("dataset") or request.form.get("dataset", "exams")
+    ds = request.args.get("dataset") or request.form.get("dataset", "schedule")
     data, original, _, _ = run_solver(ds)
 
     report = data.get("_report")
@@ -1218,7 +1197,7 @@ EXP_PAGE = BASE.replace("{% block body %}{% endblock %}", """
 
 @app.route("/explain")
 def explain():
-    ds = request.args.get("dataset", "exams")
+    ds = request.args.get("dataset", "schedule")
     exam = request.args.get("exam", "")
     data, result, _, _ = run_solver(ds)
 
@@ -1321,7 +1300,7 @@ SUM_PAGE = BASE.replace("{% block body %}{% endblock %}", """
 
 @app.route("/summary")
 def summary():
-    ds = request.args.get("dataset", "exams")
+    ds = request.args.get("dataset", "schedule")
     data, _, _, _ = run_solver(ds)
 
     report = data.get("_report")

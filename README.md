@@ -1,132 +1,110 @@
 # Exam Timetable Scheduler
 
-AI coursework (ST5001CMD) — a constraint satisfaction (CSP) based scheduling
-engine that generates clash-free timetables for Softwarica College, with
-rescheduling under uncertainty, explainable placements, and a visual output.
+An AI coursework project (ST5001CMD): a constraint satisfaction (CSP) based
+scheduling engine that generates clash-free university exam timetables,
+repairs them when a teacher becomes unavailable, and explains every placement
+it makes.
 
-## What it does
+## Dataset
 
-Given subjects, rooms, teachers, student groups, and time slots, the system
-produces a timetable where:
-- no student group has two exams at the same time
-- no room holds two exams at once, or more students than its capacity
-- no teacher is double-booked, and unavailability is respected
-- exams are spread across days to reduce student fatigue (soft constraints)
+**University Exam Scheduling** by Rezwanul Azad (2024), downloaded from Kaggle:
+https://www.kaggle.com/datasets/smrezwanulazad/exam-schedule
 
-The engine is general purpose: swapping the data file makes it schedule
-weekly classes instead of exams, with no code changes.
+The raw dataset is six CSV files (classrooms, courses, instructors, students,
+timeslots, schedule) in `data/exam_schedule/`. They describe the *inputs*
+of the problem, students enrolled on courses, rooms with capacities, and
+available time slots.
 
-## Data handling
+A small preprocessing step (`import_kaggle.py`) joins these six tables into
+one file, `data/exam_schedule.json`, which is what the solver reads. That
+file already exists in the repository, so you do not need to regenerate it.
 
-A dataset can be supplied three ways, all producing identical timetables
-because the input format is separated from the engine:
+After preprocessing the working dataset has 22 exam sessions across 5 student
+cohorts, 8 lecture rooms and 12 weekly time slots.
 
-- an **Excel workbook** with one tab per table (tidiest for office staff)
-- a folder of **CSV** files, one per table
-- a single **JSON** file
+## What the AI does
 
-The six tables are `meta`, `slots`, `venues`, `groups`, `tasks` and
-`unavailable`. The Excel workbook also carries a `readme` tab explaining
-what belongs in each sheet.
+Given exams, rooms, teachers, cohorts and time slots, the system produces a
+timetable where:
 
-Incoming data is cleaned and validated before the solver runs:
+- no student cohort has two exams at the same time
+- no room is double-booked or overcrowded
+- no teacher is in two places at once
+- exams are spread across days to reduce student fatigue (soft constraint)
 
-- **repaired automatically** — stray whitespace, inconsistent capitalisation,
-  duplicate rows, numbers stored as text, group names that differ only by case
-- **rejected with reasons** — missing room capacity, a task with no staff
-  member, references to groups or rooms that do not exist, or a dataset that
-  is provably unschedulable (more tasks than slot/room combinations, a group
-  with more exams than there are slots)
+If a teacher goes sick after the timetable is published, only the affected
+exams are moved; everything else stays where it was. For any exam, the
+system explains why it went where it did.
 
-Every repair and rejection is reported to the user rather than applied
-silently, so a timetable is never built on data the system had to guess about.
-
-## AI techniques used
+## AI techniques
 
 - **CSP modelling** — exams as variables, (slot, room) pairs as values,
   six hard constraints
-- **Backtracking search** with the **MRV heuristic** (most constrained
-  exam scheduled first) and **forward checking**
-- **Soft constraints with value ordering** — kinder placements tried first,
+- **Backtracking search** with the **MRV heuristic** (schedule the most
+  constrained exam first) and **forward checking**
+- **Value ordering by soft constraints** — kinder placements are tried first,
   measured by a 0-100 quality score
 - **Rescheduling under uncertainty** — minimal-disruption repair when a
-  teacher or room suddenly becomes unavailable
-- **Explainability** — the system justifies why each exam got its slot
+  teacher or room becomes unavailable
+- **Explainability** — the system justifies every placement it makes
 
 ## How to run
 
-Requires Python 3 only (no external libraries).
+Install the libraries once:
 
 ```
-pip install -r requirements.txt        # web interface, Excel input, notebook
-
-python app.py                              # web interface at http://localhost:5000
-python cli.py                              # terminal interface (exam timetable)
-python cli.py softwarica_classes.json      # terminal: weekly class timetable
-python engine.py softwarica_exams.xlsx     # same timetable, loaded from Excel
-python engine.py data_exams_csv            # same timetable, loaded from CSV
-python dataio.py data_noisy_csv            # data cleaning report only
-python experiments.py                      # evaluation: baselines and ablations
-python charts.py                           # evaluation charts in popup windows
-python reschedule.py                       # rescheduling demo
-
-jupyter notebook notebooks/data_exploration.ipynb   # data analysis and charts
+pip install -r requirements.txt
 ```
 
-Dataset names are resolved against the `data/` folder, so
-`python engine.py softwarica_exams.xlsx` and
-`python engine.py data/softwarica_exams.xlsx` both work.
+Then any of these, from the project root:
 
-The solver itself uses no external libraries. Flask is only for the web
-interface and openpyxl only for reading Excel files; the CLI runs on JSON
-or CSV with a plain Python 3 install.
+```
+python app.py                 # web interface at http://localhost:5000
+python src/cli.py             # menu-based terminal interface
+python src/engine.py          # one shot: print the timetable
+python src/reschedule.py      # rescheduling demo
+python src/charts.py          # evaluation charts in popup windows
+python src/experiments.py     # baselines and ablations table
+```
 
-The web interface has four working pages: generate a timetable (filterable
-to a single student group), simulate a staff absence and repair, ask why an
-exam was placed where it was, and **build your own scenario** by adding an
-exam, closing rooms or removing time slots and regenerating.
+Optional (only if `data/exam_schedule.json` gets deleted):
 
-The CLI offers the same core functions in a terminal menu: generate, simulate
-a disruption, data summary, save to file, explain a placement, and open the
-visual timetable in the browser.
+```
+python src/import_kaggle.py   # rebuild the JSON from the six Kaggle CSVs
+```
 
 ## Files
 
-| File | Role |
+| Path | Role |
 |------|------|
-| `engine.py` | CSP solver: constraints, MRV, forward checking, scoring, explainer |
-| `cli.py` | interactive menu interface |
-| `reschedule.py` | disruption handling and minimal repair |
-| `viz.py` | HTML visual timetable generator |
-| `experiments.py` | evaluation: baselines, ablations, stress scenarios |
-| `app.py` | Flask web interface — run and open http://localhost:5000 |
-| `dataio.py` | dataset loading (Excel + CSV + JSON), cleaning, validation |
-| `charts.py` | runs the solver and shows the evaluation charts |
-| `notebooks/data_exploration.ipynb` | pandas analysis and charts of the data and results |
-| `data/` | all datasets (see below) |
-
-### Inside `data/`
-
-| File | Role |
-|------|------|
-| `softwarica_exams.json` | main dataset: 20 exams, 6 groups, 7 staff |
-| `softwarica_classes.json` | second dataset proving engine generality |
-| `softwarica_exams.xlsx` | the exam dataset as an Excel workbook |
-| `softwarica_classes.xlsx` | the class dataset as an Excel workbook |
-| `data_exams_csv/` | the exam dataset in CSV form |
-| `data_classes_csv/` | the class dataset in CSV form |
-| `data_noisy_csv/` | recoverable noise: cleaned, then scheduled |
-| `data_messy_csv/` | unrecoverable errors: rejected with reasons |
+| `app.py` | Flask web interface (entry point) |
+| `src/engine.py` | CSP solver, constraints, MRV, forward checking, scoring, explainer |
+| `src/dataio.py` | dataset loading and validation |
+| `src/import_kaggle.py` | joins the six Kaggle CSVs into one JSON |
+| `src/reschedule.py` | disruption handling and minimal repair |
+| `src/viz.py` | HTML visual timetable |
+| `src/experiments.py` | baselines and ablations |
+| `src/charts.py` | evaluation charts in popup windows |
+| `src/cli.py` | interactive terminal menu |
+| `notebooks/data_exploration.ipynb` | pandas analysis and charts |
+| `data/exam_schedule/` | the six Kaggle CSVs |
+| `data/exam_schedule.json` | preprocessed dataset the solver reads |
+| `figures/` | charts saved by `charts.py` and the notebook |
 
 ## Evaluation summary
 
-Four methods compared over four scenarios (small / full / stress /
-impossible). Key findings: the random baseline always produces clashes;
-removing soft constraints drops schedule quality from 100 to 0; on an
-over-constrained scenario the MRV heuristic proves infeasibility about
-20x faster than naive ordering. Full table: run `python experiments.py`.
+Four methods compared across four scenarios (small, full, stress, impossible).
+Key findings:
+
+- the random baseline always produces clashes, so the problem is not trivial
+- removing soft constraints drops schedule quality but not correctness
+- the MRV heuristic proves infeasibility roughly 20 times faster than naive
+  ordering on an over-constrained scenario
+
+Full table: `python experiments.py`.
 
 ## Author
 
-Shweta Bhandari — BSc (Hons) Computer Science with AI, Softwarica College of IT & E-Commerce.
-Module: ST5001CMD Artificial Intelligence (Module leader: Er. Suman Shrestha).
+Shweta Bhandari, BSc (Hons) Computer Science with AI, Softwarica College of
+IT & E-Commerce. Module: ST5001CMD Artificial Intelligence
+(Module leader: Er. Suman Shrestha).

@@ -79,7 +79,7 @@ def pick_disruption(assignment, data, who=None):
     return staff, day, lost
 
 
-def demo(path="data/softwarica_exams.json", who="Sarita Rai"):
+def demo(path="data/exam_schedule.json", who="Sarita Rai"):
     data = load_data(path)
     data["_by_name"] = {t["name"]: t for t in data["tasks"]}
 
@@ -119,4 +119,4 @@ def demo(path="data/softwarica_exams.json", who="Sarita Rai"):
 
 
 if __name__ == "__main__":
-    demo(sys.argv[1] if len(sys.argv) > 1 else "data/softwarica_exams.json")
+    demo(sys.argv[1] if len(sys.argv) > 1 else "data/exam_schedule.json")

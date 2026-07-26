@@ -543,15 +543,26 @@ def validate(data, report):
 # --- entry point ---
 
 # datasets live in data/ next to the code, but a bare filename is also accepted
-DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
+def _project_root():
+    """Walk up from this file until a folder containing data/ is found."""
+    d = os.path.dirname(os.path.abspath(__file__))
+    for _ in range(4):
+        if os.path.isdir(os.path.join(d, "data")):
+            return d
+        d = os.path.dirname(d)
+    return os.path.dirname(os.path.abspath(__file__))
+
+
+PROJECT_ROOT = _project_root()
+DATA_DIR = os.path.join(PROJECT_ROOT, "data")
 
 
 def resolve(path):
-    """Accept 'x.json' or 'data/x.json'. Returns the first path that exists."""
-    root = os.path.dirname(os.path.abspath(__file__))
+    """Accept 'x.json' or 'data/x.json' from any working directory."""
     for candidate in (path,
+                      os.path.join(PROJECT_ROOT, path),
                       os.path.join(DATA_DIR, path),
-                      os.path.join(root, path)):
+                      os.path.join(DATA_DIR, os.path.basename(path))):
         if os.path.exists(candidate):
             return candidate
     return path
@@ -716,7 +727,7 @@ def export_to_xlsx(json_path, out_path):
 
 if __name__ == "__main__":
     import sys
-    target = sys.argv[1] if len(sys.argv) > 1 else "data/softwarica_exams.json"
+    target = sys.argv[1] if len(sys.argv) > 1 else "data/exam_schedule.json"
     d, rep = load_dataset(target, strict=False)
     print(rep.text())
     print(f"\nLoaded {len(d['tasks'])} tasks, {len(d['venues'])} venues, "

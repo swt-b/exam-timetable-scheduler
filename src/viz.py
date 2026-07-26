@@ -115,7 +115,7 @@ def show(assignment, data, filename="timetable.html", open_browser=True):
 
 
 if __name__ == "__main__":
-    data = load_data("data/softwarica_exams.json")
+    data = load_data("data/exam_schedule.json")
     data["_by_name"] = {t["name"]: t for t in data["tasks"]}
     result = solve({}, data["tasks"], data, {"attempts": 0, "backtracks": 0})
     if result is None:

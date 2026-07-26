@@ -20,8 +20,9 @@ import matplotlib.pyplot as plt
 from engine import (load_data, solve, verify, quality_score, attendance)
 from experiments import make_scenarios, solve_flex, random_baseline
 
-DATASET = "data/softwarica_exams.json"
-OUT = os.path.dirname(os.path.abspath(__file__))
+DATASET = "data/exam_schedule.json"
+OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "figures")
+os.makedirs(OUT, exist_ok=True)
 
 NAVY, INDIGO, GREEN, AMBER, RED = "#1a1f36", "#818cf8", "#059669", "#d97706", "#dc2626"
 PALETTE = ["#4e79a7", "#f28e2b", "#59a14f", "#e15759", "#76b7b2", "#af7aa1"]

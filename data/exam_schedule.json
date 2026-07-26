@@ -1,0 +1,215 @@
+{
+  "title": "UNIVERSITY EXAM SCHEDULE",
+  "task_label": "Exam",
+  "slots": [
+    "Wed 3PM",
+    "Fri 1PM",
+    "Thu 1PM",
+    "Mon 4PM",
+    "Fri 10AM",
+    "Tue 3PM",
+    "Wed 2PM",
+    "Thu 10AM",
+    "Fri 11AM",
+    "Fri 3PM",
+    "Mon 11AM",
+    "Tue 4PM"
+  ],
+  "venues": [
+    {
+      "name": "B-710",
+      "capacity": 46
+    },
+    {
+      "name": "K-793",
+      "capacity": 46
+    },
+    {
+      "name": "F-735",
+      "capacity": 45
+    },
+    {
+      "name": "J-627",
+      "capacity": 44
+    },
+    {
+      "name": "A-716",
+      "capacity": 44
+    },
+    {
+      "name": "F-502",
+      "capacity": 43
+    },
+    {
+      "name": "G-834",
+      "capacity": 42
+    },
+    {
+      "name": "B-267",
+      "capacity": 41
+    }
+  ],
+  "groups": {
+    "B.Eng.-in-Electrical-Engineering-Sophomore": 42,
+    "BSc-Applied-Mathematics-Junior": 42,
+    "BSc-Artificial-Intelligence-Sophomore": 43,
+    "MSc-Applied-Chemistry-and-Environmental-Engineering-Junior": 42,
+    "MSc-Mechatronics-Sophomore": 45
+  },
+  "tasks": [
+    {
+      "name": "Organized background forecast (MSc-Mechatronics-Sophomore)",
+      "staff": "Andrew Patton",
+      "groups": [
+        "MSc-Mechatronics-Sophomore"
+      ]
+    },
+    {
+      "name": "Adaptive foreground protocol (MSc-Mechatronics-Sophomore)",
+      "staff": "Andre Mercer",
+      "groups": [
+        "MSc-Mechatronics-Sophomore"
+      ]
+    },
+    {
+      "name": "Mandatory impactful artificial intelligence (MSc-Mechatronics-Sophomore)",
+      "staff": "Ryan Peters",
+      "groups": [
+        "MSc-Mechatronics-Sophomore"
+      ]
+    },
+    {
+      "name": "User-friendly global neural-net (MSc-Mechatronics-Sophomore)",
+      "staff": "James Cole",
+      "groups": [
+        "MSc-Mechatronics-Sophomore"
+      ]
+    },
+    {
+      "name": "De-engineered systematic pricing structure (MSc-Mechatronics-Sophomore)",
+      "staff": "Jerry Lee",
+      "groups": [
+        "MSc-Mechatronics-Sophomore"
+      ]
+    },
+    {
+      "name": "Programmable secondary pricing structure (MSc-Mechatronics-Sophomore)",
+      "staff": "Kathryn Wong",
+      "groups": [
+        "MSc-Mechatronics-Sophomore"
+      ]
+    },
+    {
+      "name": "Diverse zero-defect protocol (MSc-Mechatronics-Sophomore)",
+      "staff": "Danielle Ponce",
+      "groups": [
+        "MSc-Mechatronics-Sophomore"
+      ]
+    },
+    {
+      "name": "De-engineered systematic pricing structure (BSc-Artificial-Intelligence-Sophomore)",
+      "staff": "Ryan Watson",
+      "groups": [
+        "BSc-Artificial-Intelligence-Sophomore"
+      ]
+    },
+    {
+      "name": "User-friendly global neural-net (BSc-Artificial-Intelligence-Sophomore)",
+      "staff": "Christopher Medina",
+      "groups": [
+        "BSc-Artificial-Intelligence-Sophomore"
+      ]
+    },
+    {
+      "name": "Organized background forecast (BSc-Artificial-Intelligence-Sophomore)",
+      "staff": "Bruce Steele",
+      "groups": [
+        "BSc-Artificial-Intelligence-Sophomore"
+      ]
+    },
+    {
+      "name": "Cross-group tertiary algorithm (BSc-Artificial-Intelligence-Sophomore)",
+      "staff": "James Cole",
+      "groups": [
+        "BSc-Artificial-Intelligence-Sophomore"
+      ]
+    },
+    {
+      "name": "Cross-platform national adapter (BSc-Artificial-Intelligence-Sophomore)",
+      "staff": "Daniel Kramer",
+      "groups": [
+        "BSc-Artificial-Intelligence-Sophomore"
+      ]
+    },
+    {
+      "name": "Adaptive foreground protocol (BSc-Artificial-Intelligence-Sophomore)",
+      "staff": "Cynthia Miller",
+      "groups": [
+        "BSc-Artificial-Intelligence-Sophomore"
+      ]
+    },
+    {
+      "name": "Cross-group tertiary algorithm (MSc-Applied-Chemistry-and-Environmental-Engineering-Junior)",
+      "staff": "James Walton",
+      "groups": [
+        "MSc-Applied-Chemistry-and-Environmental-Engineering-Junior"
+      ]
+    },
+    {
+      "name": "Synergized secondary throughput (B.Eng.-in-Electrical-Engineering-Sophomore)",
+      "staff": "Andre Mercer",
+      "groups": [
+        "B.Eng.-in-Electrical-Engineering-Sophomore"
+      ]
+    },
+    {
+      "name": "Programmable secondary pricing structure (MSc-Applied-Chemistry-and-Environmental-Engineering-Junior)",
+      "staff": "James Shaffer",
+      "groups": [
+        "MSc-Applied-Chemistry-and-Environmental-Engineering-Junior"
+      ]
+    },
+    {
+      "name": "Business-focused executive encryption (MSc-Applied-Chemistry-and-Environmental-Engineering-Junior)",
+      "staff": "James Walton",
+      "groups": [
+        "MSc-Applied-Chemistry-and-Environmental-Engineering-Junior"
+      ]
+    },
+    {
+      "name": "Focused leadingedge task-force (MSc-Applied-Chemistry-and-Environmental-Engineering-Junior)",
+      "staff": "Jerry Lee",
+      "groups": [
+        "MSc-Applied-Chemistry-and-Environmental-Engineering-Junior"
+      ]
+    },
+    {
+      "name": "De-engineered systematic pricing structure (B.Eng.-in-Electrical-Engineering-Sophomore)",
+      "staff": "Cynthia Miller",
+      "groups": [
+        "B.Eng.-in-Electrical-Engineering-Sophomore"
+      ]
+    },
+    {
+      "name": "Re-contextualized web-enabled process improvement (B.Eng.-in-Electrical-Engineering-Sophomore)",
+      "staff": "Randy Miller",
+      "groups": [
+        "B.Eng.-in-Electrical-Engineering-Sophomore"
+      ]
+    },
+    {
+      "name": "Business-focused executive encryption (BSc-Applied-Mathematics-Junior)",
+      "staff": "Belinda Newman",
+      "groups": [
+        "BSc-Applied-Mathematics-Junior"
+      ]
+    },
+    {
+      "name": "Cross-group tertiary algorithm (BSc-Applied-Mathematics-Junior)",
+      "staff": "Angela Myers",
+      "groups": [
+        "BSc-Applied-Mathematics-Junior"
+      ]
+    }
+  ]
+}

@@ -320,4 +320,4 @@ def run(path):
 
 
 if __name__ == "__main__":
-    run(sys.argv[1] if len(sys.argv) > 1 else "data/softwarica_exams.json")
+    run(sys.argv[1] if len(sys.argv) > 1 else "data/exam_schedule.json")
