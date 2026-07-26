@@ -1,0 +1,9 @@
+# The CSP solver itself needs nothing beyond the Python 3 standard library.
+# These are only for the interface, the Excel reader and the analysis notebook.
+
+flask>=3.0          # web interface (app.py)
+openpyxl>=3.1       # reading and writing .xlsx datasets (dataio.py)
+
+pandas>=2.0         # notebooks/data_exploration.ipynb
+matplotlib>=3.7     # notebooks/data_exploration.ipynb
+notebook>=7.0       # to open the notebook

@@ -58,9 +58,9 @@ silently, so a timetable is never built on data the system had to guess about.
 Requires Python 3 only (no external libraries).
 
 ```
-pip install flask openpyxl             # web interface, Excel input
+pip install -r requirements.txt        # web interface, Excel input, notebook
 
-python app.py                              # web interface at http://127.0.0.1:5000
+python app.py                              # web interface at http://localhost:5000
 python cli.py                              # terminal interface (exam timetable)
 python cli.py softwarica_classes.json      # terminal: weekly class timetable
 python engine.py softwarica_exams.xlsx     # same timetable, loaded from Excel
@@ -68,6 +68,8 @@ python engine.py data_exams_csv            # same timetable, loaded from CSV
 python dataio.py data_noisy_csv            # data cleaning report only
 python experiments.py                      # evaluation: baselines and ablations
 python reschedule.py                       # rescheduling demo
+
+jupyter notebook notebooks/data_exploration.ipynb   # data analysis and charts
 ```
 
 Dataset names are resolved against the `data/` folder, so
@@ -78,9 +80,14 @@ The solver itself uses no external libraries. Flask is only for the web
 interface and openpyxl only for reading Excel files; the CLI runs on JSON
 or CSV with a plain Python 3 install.
 
-The CLI menu offers: generate, simulate a disruption, data summary,
-save to file, explain a placement, and open the visual timetable
-in the browser.
+The web interface has four working pages: generate a timetable (filterable
+to a single student group), simulate a staff absence and repair, ask why an
+exam was placed where it was, and **build your own scenario** by adding an
+exam, closing rooms or removing time slots and regenerating.
+
+The CLI offers the same core functions in a terminal menu: generate, simulate
+a disruption, data summary, save to file, explain a placement, and open the
+visual timetable in the browser.
 
 ## Files
 
@@ -91,8 +98,9 @@ in the browser.
 | `reschedule.py` | disruption handling and minimal repair |
 | `viz.py` | HTML visual timetable generator |
 | `experiments.py` | evaluation: baselines, ablations, stress scenarios |
-| `app.py` | Flask web interface — run and open http://127.0.0.1:5000 |
+| `app.py` | Flask web interface — run and open http://localhost:5000 |
 | `dataio.py` | dataset loading (Excel + CSV + JSON), cleaning, validation |
+| `notebooks/data_exploration.ipynb` | pandas analysis and charts of the data and results |
 | `data/` | all datasets (see below) |
 
 ### Inside `data/`

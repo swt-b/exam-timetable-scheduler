@@ -3,7 +3,7 @@ app.py — Web interface for the AI Exam Timetable Scheduler
 ST5001CMD Artificial Intelligence coursework — Shweta Bhandari
 
 Run:  python app.py
-Open: http://127.0.0.1:5000
+Open: http://localhost:5000
 """
 
 import os, sys, copy, time
@@ -138,6 +138,20 @@ select,input[type=text]{width:100%;padding:8px 11px;border:1px solid #ddd;
                          border-radius:7px;font-size:13.5px;background:#fafafa}
 select:focus,input:focus{outline:2px solid #818cf8;border-color:#818cf8;background:#fff}
 
+/* scenario builder */
+.bsec{border-top:1px solid #f0f0f3;padding-top:18px;margin-top:18px}
+.bsec:first-of-type{border-top:none;padding-top:0;margin-top:8px}
+.bsec h3{font-size:13.5px;margin-bottom:3px}
+.bhint{font-size:12.5px;color:#777;margin-bottom:11px;line-height:1.5}
+.chips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:6px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;
+      border:1px solid #ddd;border-radius:20px;font-size:12.5px;color:#666;
+      background:#fafafa;cursor:pointer;user-select:none;transition:.12s}
+.chip:hover{border-color:#818cf8}
+.chip.on{background:#eef2ff;border-color:#818cf8;color:#3730a3;font-weight:500}
+.chip input{margin:0;cursor:pointer;accent-color:#6366f1}
+.chip .cap{color:#9ca3af;font-size:11px}
+
 /* alerts & moved */
 .alert{padding:13px 16px;border-radius:8px;margin-bottom:14px;font-size:13.5px}
 .a-green{background:#d1fae5;color:#065f46;border-left:4px solid #059669}
@@ -167,6 +181,7 @@ select:focus,input:focus{outline:2px solid #818cf8;border-color:#818cf8;backgrou
 <nav>
   <span class="logo">🗓 TimetableAI</span>
   <a href="/" class="{{ 'on' if active=='home' else '' }}">Home</a>
+  <a href="/build" class="{{ 'on' if active=='build' else '' }}">Build your own</a>
   <a href="/about" class="{{ 'on' if active=='about' else '' }}">About</a>
   {% if ds %}
   <a href="/timetable?dataset={{ ds }}" class="{{ 'on' if active=='tt' else '' }}">Timetable</a>
@@ -295,6 +310,13 @@ ABOUT = BASE.replace("{% block body %}{% endblock %}", """
         Pick any exam and the system explains its placement: what ruled out every
         other slot and room, and whether a better option existed.</p>
       <a href="/explain?dataset=exams" class="btn btn-green btn-sm" style="margin-top:10px">Try it →</a>
+    </div>
+    <div style="padding:16px;background:#eef2ff;border-radius:10px">
+      <b style="color:#3730a3;font-size:13.5px">Change the problem</b>
+      <p style="font-size:12.5px;color:#555;margin-top:6px;line-height:1.6">
+        Add an exam, close a room, or cut time slots, then generate again. Take
+        away enough and the system will prove no valid timetable exists.</p>
+      <a href="/build" class="btn btn-primary btn-sm" style="margin-top:10px">Build your own →</a>
     </div>
   </div>
 </div>
@@ -431,6 +453,322 @@ ABOUT = BASE.replace("{% block body %}{% endblock %}", """
 @app.route("/about")
 def about():
     return render_template_string(ABOUT, title="How it works", active="about", ds=None)
+
+
+# ── build your own timetable ─────────────────────────────────────────────────
+
+BUILD_PAGE = BASE.replace("{% block body %}{% endblock %}", """
+<a class="back" href="/">← Back to Home</a>
+
+<div class="panel">
+  <h2>🛠 Build your own timetable</h2>
+  <p class="sub">Change the problem and watch the AI solve it again. Add an exam,
+     close rooms, remove time slots, or make a teacher unavailable, then generate.</p>
+
+  <form method="POST" action="/build">
+    <input type="hidden" name="base" value="{{ base }}">
+
+    <div class="bsec">
+      <h3>Rooms available</h3>
+      <p class="bhint">Untick a room to close it, for example for maintenance.</p>
+      <div class="chips">
+        {% for v in all_venues %}
+        <label class="chip {{ 'on' if v.name in venues_on else '' }}">
+          <input type="checkbox" name="venue" value="{{ v.name }}"
+                 {{ 'checked' if v.name in venues_on else '' }}>
+          {{ v.name }} <span class="cap">{{ v.capacity }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="bsec">
+      <h3>Time slots available</h3>
+      <p class="bhint">Remove slots to squeeze the timetable. Remove enough and no
+         valid answer will exist, which the system will prove rather than guess.</p>
+      <div class="chips">
+        {% for s in all_slots %}
+        <label class="chip {{ 'on' if s in slots_on else '' }}">
+          <input type="checkbox" name="slot" value="{{ s }}"
+                 {{ 'checked' if s in slots_on else '' }}>
+          {{ s }}
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="bsec">
+      <h3>Exams to schedule</h3>
+      <p class="bhint">Untick any exam to leave it out.</p>
+      <div class="chips">
+        {% for t in all_tasks %}
+        <label class="chip {{ 'on' if t.name in tasks_on else '' }}">
+          <input type="checkbox" name="task" value="{{ t.name }}"
+                 {{ 'checked' if t.name in tasks_on else '' }}>
+          {{ t.name }}
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="bsec">
+      <h3>Add a new exam</h3>
+      <p class="bhint">Leave the name blank to skip.</p>
+      <div class="frow">
+        <div class="fg">
+          <label>Exam name</label>
+          <input type="text" name="new_name" placeholder="e.g. Computer Networks"
+                 value="{{ form.new_name }}">
+        </div>
+        <div class="fg">
+          <label>Teacher</label>
+          <select name="new_staff">
+            {% for s in all_staff %}
+            <option {{ 'selected' if form.new_staff == s else '' }}>{{ s }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <label>Which groups sit it</label>
+      <div class="chips">
+        {% for g, n in all_groups.items() %}
+        <label class="chip {{ 'on' if g in form.new_groups else '' }}">
+          <input type="checkbox" name="new_group" value="{{ g }}"
+                 {{ 'checked' if g in form.new_groups else '' }}>
+          {{ g }} <span class="cap">{{ n }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="bsec">
+      <h3>Make a teacher unavailable</h3>
+      <div class="frow">
+        <div class="fg">
+          <label>Teacher</label>
+          <select name="block_staff">
+            <option value="">nobody</option>
+            {% for s in all_staff %}
+            <option {{ 'selected' if form.block_staff == s else '' }}>{{ s }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="fg">
+          <label>Unavailable slots (comma separated)</label>
+          <input type="text" name="block_slots" placeholder="Mon 9AM, Mon 1PM"
+                 value="{{ form.block_slots }}">
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:6px">
+      <button class="btn btn-primary" type="submit">Generate timetable →</button>
+      <a href="/build?base={{ base }}" class="btn btn-sm"
+         style="background:#e5e7eb;color:#374151;padding:9px 22px">Reset</a>
+    </div>
+  </form>
+</div>
+
+{% if attempted %}
+  {% if error %}
+  <div class="alert a-red"><b>Cannot schedule.</b> {{ error }}</div>
+  {% elif result is none %}
+  <div class="panel">
+    <h2>❌ No valid timetable exists</h2>
+    <p class="sub">The search explored every possibility and proved these constraints
+       cannot all be satisfied at the same time.</p>
+    <p style="font-size:13.5px;line-height:1.8;color:#333">
+      You asked for <b>{{ n_tasks }} exams</b> in <b>{{ n_slots }} slots</b> across
+      <b>{{ n_venues }} rooms</b>, which is {{ n_slots * n_venues }} possible sittings.
+      This is a definite answer, not a failure to find one. Add a slot or reopen a room
+      and try again.
+    </p>
+    <p style="font-size:13px;color:#666;margin-top:10px">
+      Proved in {{ elapsed }}s after {{ tried }} placement attempts.
+    </p>
+  </div>
+  {% else %}
+  <div class="stats">
+    <div class="stat blue"><div class="v">{{ n_tasks }}</div><div class="l">Exams scheduled</div></div>
+    <div class="stat {{ 'green' if clashes==0 else 'red' }}">
+      <div class="v">{{ clashes }}</div><div class="l">Clashes</div></div>
+    <div class="stat {{ 'green' if quality==100 else 'amber' }}">
+      <div class="v">{{ quality }}/100</div><div class="l">Quality score</div></div>
+    <div class="stat amber"><div class="v">{{ elapsed }}s</div><div class="l">Solve time</div></div>
+    <div class="stat {{ 'green' if backtracks==0 else 'amber' }}">
+      <div class="v">{{ backtracks }}</div><div class="l">Backtracks</div></div>
+  </div>
+
+  <div class="tt-wrap">
+    <h2>Your timetable</h2>
+    <div class="legend">
+      {% for g, c in colors.items() %}
+      <span class="litem" style="background:{{ c }}">{{ g }}</span>
+      {% endfor %}
+    </div>
+    <table>
+      <tr><th></th>
+        {% for v in shown_venues %}<th>{{ v.name }}<br>
+          <small style="opacity:.7">cap {{ v.capacity }}</small></th>{% endfor %}
+      </tr>
+      {% for slot in slots %}
+      <tr>
+        <td class="sc">{{ slot }}</td>
+        {% for v in shown_venues %}
+          {% set key = slot + '|||' + v.name %}
+          {% if key in by_cell %}
+            {% set item = by_cell[key] %}
+            <td><div class="ec" style="background:{{ colors[item.group1] }};
+                 {% if item.is_new %}outline:3px solid #fbbf24;{% endif %}">
+              <b>{{ item.name }}</b>{% if item.is_new %} ✨{% endif %}
+              <small>{{ item.groups }} · {{ item.people }} ppl · {{ item.staff }}</small>
+            </div></td>
+          {% else %}<td class="em"></td>{% endif %}
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+  {% endif %}
+{% endif %}
+""")
+
+
+def _build_defaults(data):
+    return {
+        "venues_on": [v["name"] for v in data["venues"]],
+        "slots_on": list(data["slots"]),
+        "tasks_on": [t["name"] for t in data["tasks"]],
+    }
+
+
+@app.route("/build", methods=["GET", "POST"])
+def build():
+    base = (request.values.get("base") or "exams")
+    if base not in ("exams", "classes"):
+        base = "exams"
+
+    data = load_data(DATASETS[base])
+    all_staff = sorted({t["staff"] for t in data["tasks"]})
+
+    ctx = {
+        "base": base,
+        "all_venues": data["venues"],
+        "all_slots": list(data["slots"]),
+        "all_tasks": data["tasks"],
+        "all_groups": data["groups"],
+        "all_staff": all_staff,
+        "form": {"new_name": "", "new_staff": all_staff[0] if all_staff else "",
+                 "new_groups": [], "block_staff": "", "block_slots": ""},
+        "attempted": False, "error": None, "result": None,
+    }
+    ctx.update(_build_defaults(data))
+
+    if request.method == "GET":
+        return render_template_string(BUILD_PAGE, title="Build your own",
+                                      active="build", ds=None, **ctx)
+
+    # ---- read the form ----
+    f = request.form
+    venues_on = f.getlist("venue")
+    slots_on = f.getlist("slot")
+    tasks_on = f.getlist("task")
+    new_name = (f.get("new_name") or "").strip()
+    new_staff = f.get("new_staff") or ""
+    new_groups = f.getlist("new_group")
+    block_staff = f.get("block_staff") or ""
+    block_slots = [s.strip() for s in (f.get("block_slots") or "").split(",") if s.strip()]
+
+    ctx.update({
+        "venues_on": venues_on, "slots_on": slots_on, "tasks_on": tasks_on,
+        "attempted": True,
+        "form": {"new_name": new_name, "new_staff": new_staff,
+                 "new_groups": new_groups, "block_staff": block_staff,
+                 "block_slots": ", ".join(block_slots)},
+    })
+
+    # ---- assemble the scenario ----
+    scenario = copy.deepcopy(data)
+    scenario["venues"] = [v for v in data["venues"] if v["name"] in venues_on]
+    scenario["slots"] = [s for s in data["slots"] if s in slots_on]
+    scenario["tasks"] = [t for t in data["tasks"] if t["name"] in tasks_on]
+
+    if new_name:
+        if not new_groups:
+            ctx["error"] = "Choose at least one group for the new exam."
+            return render_template_string(BUILD_PAGE, title="Build your own",
+                                          active="build", ds=None, **ctx)
+        if any(t["name"].lower() == new_name.lower() for t in scenario["tasks"]):
+            ctx["error"] = f"There is already an exam called '{new_name}'."
+            return render_template_string(BUILD_PAGE, title="Build your own",
+                                          active="build", ds=None, **ctx)
+        scenario["tasks"].append({"name": new_name, "staff": new_staff,
+                                  "groups": new_groups})
+
+    if block_staff and block_slots:
+        scenario.setdefault("staff_unavailable", {})
+        scenario["staff_unavailable"] = dict(scenario.get("staff_unavailable") or {})
+        scenario["staff_unavailable"][block_staff] = list(
+            scenario["staff_unavailable"].get(block_staff, [])) + block_slots
+
+    # slot dates no longer apply once slots are edited by hand
+    scenario["slot_dates"] = {s: d for s, d in (data.get("slot_dates") or {}).items()
+                              if s in scenario["slots"]}
+    scenario["_by_name"] = {t["name"]: t for t in scenario["tasks"]}
+
+    # ---- sanity checks before searching ----
+    if not scenario["slots"]:
+        ctx["error"] = "Keep at least one time slot."
+    elif not scenario["venues"]:
+        ctx["error"] = "Keep at least one room open."
+    elif not scenario["tasks"]:
+        ctx["error"] = "Keep at least one exam to schedule."
+    else:
+        biggest = max(v["capacity"] for v in scenario["venues"])
+        toobig = [t["name"] for t in scenario["tasks"]
+                  if attendance(t, scenario) > biggest]
+        if toobig:
+            ctx["error"] = (f"No open room is large enough for: "
+                            f"{', '.join(toobig)}. Reopen a bigger room.")
+    if ctx["error"]:
+        return render_template_string(BUILD_PAGE, title="Build your own",
+                                      active="build", ds=None, **ctx)
+
+    # ---- solve ----
+    stats = {"attempts": 0, "backtracks": 0}
+    t0 = time.time()
+    result = solve({}, scenario["tasks"], scenario, stats)
+    elapsed = round(time.time() - t0, 3)
+
+    ctx.update({
+        "result": result, "elapsed": elapsed, "tried": stats["attempts"],
+        "backtracks": stats["backtracks"],
+        "n_tasks": len(scenario["tasks"]), "n_slots": len(scenario["slots"]),
+        "n_venues": len(scenario["venues"]),
+    })
+
+    if result is not None:
+        colors = group_colors(scenario)
+        used = {v for _s, v in result.values()}
+        by_cell = {}
+        for name, (slot, venue) in result.items():
+            task = scenario["_by_name"][name]
+            by_cell[slot + "|||" + venue] = {
+                "name": name, "group1": task["groups"][0],
+                "groups": ", ".join(task["groups"]),
+                "people": attendance(task, scenario), "staff": task["staff"],
+                "is_new": bool(new_name) and name == new_name,
+            }
+        ctx.update({
+            "colors": colors,
+            "shown_venues": [v for v in scenario["venues"] if v["name"] in used],
+            "slots": scenario["slots"], "by_cell": by_cell,
+            "clashes": len(verify(result, scenario)),
+            "quality": quality_score(result, scenario),
+        })
+
+    return render_template_string(BUILD_PAGE, title="Build your own",
+                                  active="build", ds=None, **ctx)
 
 
 
@@ -1012,8 +1350,9 @@ def summary():
 
 if __name__ == "__main__":
     import threading, webbrowser
+    URL = "http://localhost:5000"
     print("\n  TimetableAI is running.")
-    print("  Opening in your browser:  http://127.0.0.1:5000")
+    print(f"  Opening in your browser:  {URL}")
     print("  (press CTRL+C here to stop the server)\n")
-    threading.Timer(1.2, lambda: webbrowser.open("http://127.0.0.1:5000")).start()
-    app.run(debug=False)
+    threading.Timer(1.2, lambda: webbrowser.open(URL)).start()
+    app.run(host="127.0.0.1", port=5000, debug=False)

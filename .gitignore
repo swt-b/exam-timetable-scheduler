@@ -12,6 +12,9 @@ timetable.html
 # Private working notes (not part of the submission)
 report_outline.md
 
+# Jupyter checkpoints (the notebook itself IS committed)
+.ipynb_checkpoints/
+
 # OS junk
 Thumbs.db
 .DS_Store
