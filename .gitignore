@@ -5,13 +5,13 @@ __pycache__/
 # Editor settings
 .vscode/
 
-# Generated output (regenerate with charts.py or the notebook)
-figures/
+# Generated output
 timetable_output.txt
 timetable.html
 
 # Private working notes (not part of the submission)
 report_outline.md
+REPORT_DRAFT.md
 
 # Jupyter checkpoints (the notebook itself IS committed)
 .ipynb_checkpoints/

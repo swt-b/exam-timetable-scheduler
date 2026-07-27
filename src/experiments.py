@@ -9,12 +9,14 @@ Methods:
     no-order    backtracking + MRV, but random value order (kindness OFF)
     random      baseline: every task gets a random slot+venue (no AI at all)
 
-Scenarios:
-    small       first 10 exams, all 10 slots      (easy)
-    full        all 20 exams, all 10 slots        (realistic)
-    stress      all 20 exams, only 5 slots        (exam-crunch week)
-    impossible  all 20 exams, only 4 slots        (over-constrained: no
-                solution exists; tests how fast each method PROVES it)
+Scenarios (the busiest cohort sits 7 exams, so 7 slots is the natural floor):
+    small       first 10 exams, all 12 slots      (easy)
+    full        all 22 exams, all 12 slots        (realistic)
+    stress      all 22 exams, only 7 slots        (exam-crunch week: solvable
+                but the busiest cohort is packed, so quality falls)
+    impossible  all 22 exams, only 4 slots        (over-constrained: the
+                7-exam cohort cannot fit, so no solution exists; tests how
+                fast each method PROVES it)
 
 Metrics:
     solved | time (s) | placements tried | backtracks | clashes | quality /100
@@ -90,7 +92,7 @@ def make_scenarios(path="data/exam_schedule.json"):
     small["tasks"] = small["tasks"][:10]
 
     stress = copy.deepcopy(base)
-    stress["slots"] = stress["slots"][:5]
+    stress["slots"] = stress["slots"][:7]
 
     impossible = copy.deepcopy(base)
     impossible["slots"] = impossible["slots"][:4]
@@ -145,12 +147,21 @@ def main():
         print("  ".join(str(c).ljust(w) for c, w in zip(r, widths)))
 
     print("\nNotes:")
-    print("  full     = our system (MRV + value ordering)")
-    print("  no-mrv   = naive task order; shows why the MRV heuristic matters")
-    print("  no-order = valid but unkind schedules; shows why soft constraints matter")
-    print("  random   = no AI baseline; clashes show the problem is not trivial")
-    print("  'no' on impossible = correctly proved no timetable exists")
+    print("  full     = our system (backtracking + MRV + value ordering)")
+    print("  no-mrv   = MRV switched off (tasks taken in file order)")
+    print("  no-order = value ordering switched off")
+    print("  random   = no AI baseline; every task gets a random slot and room")
+    print("  INVALID  = a timetable was produced but it contains clashes")
+    print("  'no' on impossible = correctly PROVED no timetable exists")
     print("  CAPPED   = gave up after", ATTEMPT_CAP, "attempts without an answer")
+    print()
+    print("  The random baseline is invalid in every scenario, so the problem")
+    print("  needs a real search algorithm. On this dataset the instance is")
+    print("  loosely constrained (8 rooms per slot), so a greedy order already")
+    print("  succeeds with 0 backtracks; MRV and value ordering leave the result")
+    print("  unchanged here. Their value is as safeguards: on the over-constrained")
+    print("  'impossible' scenario systematic backtracking is what lets the system")
+    print("  PROVE no timetable exists instead of returning an invalid one.")
 
 
 if __name__ == "__main__":

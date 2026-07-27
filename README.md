@@ -96,12 +96,16 @@ python src/import_kaggle.py   # rebuild the JSON from the six Kaggle CSVs
 Four methods compared across four scenarios (small, full, stress, impossible).
 Key findings:
 
-- the random baseline always produces clashes, so the problem is not trivial
-- removing soft constraints drops schedule quality but not correctness
-- the MRV heuristic proves infeasibility roughly 20 times faster than naive
-  ordering on an over-constrained scenario
+- the random baseline is invalid in every scenario (6 to 20 clashes), so the
+  problem genuinely needs a search algorithm
+- the solver produces a correct, fair timetable instantly (0 clashes,
+  0 backtracks, about 0.05s on the full dataset)
+- on the over-constrained scenario the solver correctly proves that no
+  timetable exists rather than returning an invalid one
+- on this loosely constrained real instance MRV and value ordering leave the
+  result unchanged; they are safeguards whose benefit grows as instances tighten
 
-Full table: `python experiments.py`.
+Full table: `python src/experiments.py`.
 
 ## Author
 
